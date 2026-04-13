@@ -1,0 +1,85 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ScavgameTranslationUtils.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        d:DesignWidth="800"
+        d:DesignHeight="450"
+        x:Class="ScavgameTranslationUtils.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/icon2.png"
+        Title="Scavgame Translation Utils"
+        Name="MainWindowElement"
+        SizeToContent="WidthAndHeight"
+        Padding="20">
+  <Grid ColumnSpacing="5" RowSpacing="5">
+    <Grid.RowDefinitions>
+      <RowDefinition MinHeight="145" Height="*"/>
+      <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="40"/>
+    </Grid.RowDefinitions>
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition MinWidth="200"/>
+      <ColumnDefinition MinWidth="500"/>
+    </Grid.ColumnDefinitions>
+    
+    <Image Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
+           Source="../Assets/sawians_2x.png"
+           HorizontalAlignment="Stretch"
+           VerticalAlignment="Center"
+           Stretch="None" />
+    <Button Grid.Row="1" Grid.Column="0"
+            Click="OpenOriginalLocalization"
+            MinWidth="180"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="Select English Locale..." />
+    <TextBlock Grid.Row="1" Grid.Column="1"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Text="{Binding EnglishTranslationPath, FallbackValue='English locale not found...', TargetNullValue='English locale not found...'}" />
+    <Button Grid.Row="2" Grid.Column="0"
+            Click="OpenTranslationFile"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            MinWidth="180"
+            Content="Open Translation File..." />
+    <TextBlock Grid.Row="2" Grid.Column="1"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Text="{Binding TranslationPath, FallbackValue='No translation selected...', TargetNullValue='No translation selected...'}" />
+    <Button Grid.Row="3" Grid.Column="0"
+            Click="CreateTranslationFile"
+            MinWidth="180"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Content="Create Translation File..." />
+    <ComboBox Grid.Row="3" Grid.Column="1"
+              Name="CountryCodeComboBox"
+              MinWidth="400"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              PlaceholderText="Specify a locale name to create"
+              SelectedIndex="{Binding #MainWindowElement.SelectedCountryCode}"
+              ItemsSource="{Binding #MainWindowElement.TranslationNames}" />
+    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="20">
+      <Button 
+              Click="OpenBackupsFolder"
+              MinWidth="180"
+              Content="Open Backups Folder..."/>
+      <Button 
+              Click="BeginTranslation"
+              MinWidth="180"
+              IsEnabled="{Binding CanTranslate}"
+              Content="Begin Translating!"/>
+    </StackPanel>
+  </Grid>
+</Window>

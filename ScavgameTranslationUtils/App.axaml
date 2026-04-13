@@ -1,0 +1,11 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="ScavgameTranslationUtils.App"
+             RequestedThemeVariant="Default">
+    <Application.Styles>
+        <FluentTheme />
+    </Application.Styles>
+    <Application.Resources>
+        <FontFamily x:Key="Unifont">avares://ScavgameTranslationUtils/Assets/unifont-17.0.04.otf#Unifont</FontFamily>
+    </Application.Resources>
+</Application>

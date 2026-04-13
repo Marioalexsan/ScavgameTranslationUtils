@@ -1,0 +1,211 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:ScavgameTranslationUtils.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="ScavgameTranslationUtils.Views.TranslationWindow"
+        x:DataType="vm:TranslationWindowViewModel"
+        Closing="WindowClosing"
+        Icon="/Assets/icon2.png"
+        Title="Scavgame Translation Utils"
+        Name="ThisWindow">
+  <TabControl SelectionChanged="AutosaveChanges">
+    <TabItem Header="Metadata">
+      <StackPanel>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition MinHeight="80" MaxHeight="300" />
+            <RowDefinition MinHeight="80" MaxHeight="300" />
+            <RowDefinition MinHeight="80" MaxHeight="300" />
+          </Grid.RowDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0"
+                     Text="Name" />
+          <TextBox Grid.Row="0" Grid.Column="1"
+                   Margin="20, 0, 20, 0"
+                   TextWrapping="Wrap"
+                   Text="{Binding CurrentName}"
+                   LostFocus="AutosaveChanges" />
+          <TextBlock Grid.Row="1" Grid.Column="0"
+                     Text="Description" />
+          <ScrollViewer Grid.Row="1" Grid.Column="1"
+                        MaxHeight="300"
+                        VerticalScrollBarVisibility="Visible">
+            <TextBox TextWrapping="Wrap"
+                     Margin="20, 0, 20, 0"
+                     AcceptsReturn="True"
+                     Text="{Binding CurrentDescription}"
+                     LostFocus="AutosaveChanges" />
+          </ScrollViewer>
+          <TextBlock Grid.Row="2" Grid.Column="0"
+                     Text="Indent Size" />
+          <ComboBox Grid.Row="2" Grid.Column="1"
+                   ItemsSource="{Binding AllowedIndents}"
+                   SelectedItem="{Binding IndentSize}"
+                   SelectionChanged="AutosaveChanges" />
+        </Grid>
+        <Grid>
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+          </Grid.ColumnDefinitions>
+          <Grid.RowDefinitions>
+            <RowDefinition MinHeight="80" />
+          </Grid.RowDefinitions>
+          <TextBlock Grid.Row="0" Grid.Column="0"
+                     Text="Translation progress:" />
+          <TextBlock Grid.Row="0" Grid.Column="1"
+                     Text="{Binding TranslationProgress}" />
+        </Grid>
+        <StackPanel Orientation="Horizontal">
+          <Button Click="SaveChangesManual"
+                  Content="Save Changes" />
+          <CheckBox IsChecked="{Binding #ThisWindow.AutosaveEnabled}"
+                    Content="Enable autosaving" 
+                    Margin="20, 0, 0, 0"/>
+          <CheckBox IsChecked="{Binding SortKeys}"
+                    Content="Sort keys before saving" 
+                    Margin="20, 0, 0, 0"/>
+        </StackPanel>
+        <Button Click="CloseWindow"
+                Content="Save Changes and Close" />
+        <Button Click="CloseWindowWithoutSaving"
+                Content="Close Without Saving" />
+      </StackPanel>
+    </TabItem>
+    <TabItem Header="Translation">
+      <Grid RowDefinitions="*" ColumnDefinitions="*, 4*">
+        <TreeView ItemsSource="{Binding DisplayNodes}" SelectedItem="{Binding SelectedTreeViewItem}">
+          <TreeView.ItemTemplate>
+            <TreeDataTemplate ItemsSource="{Binding SubNodes}">
+              <TextBlock Text="{Binding DisplayLabel}"/>
+            </TreeDataTemplate>
+          </TreeView.ItemTemplate>
+        </TreeView>
+        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Visible">
+          <StackPanel Orientation="Vertical" Margin="0,0,40,0">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="Key" Margin="5" />
+              <ComboBox Name="MainKeysComboBox"
+                        Margin="5"
+                        MinWidth="400"
+                        SelectedIndex="{Binding CurrentKeyIndex}"
+                        ItemsSource="{Binding DisplayKeys}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Display}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </StackPanel>
+            <Grid HorizontalAlignment="Left">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+              </Grid.RowDefinitions>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <Button Grid.Row="0" Grid.Column="0"
+                      Content="Previous"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding PreviousMainKeyCommand}" />
+              <Button Grid.Row="0" Grid.Column="1"
+                      Content="Next"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding NextMainKeyCommand}" />
+              <TextBlock Grid.Row="0" Grid.Column="2"
+                         HorizontalAlignment="Center"
+                         VerticalAlignment="Center"
+                         Text="{Binding PaginationText, FallbackValue='Key 0 / Total 0', TargetNullValue='Key 0 / Total 0'}" />
+              <Button Grid.Row="1" Grid.Column="0"
+                      Content="Previous category"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding PreviousCategoryCommand}" />
+              <Button Grid.Row="1" Grid.Column="1"
+                      Content="Next category"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding NextCategoryCommand}" />
+              <Button Grid.Row="1" Grid.Column="2"
+                      Content="Next untranslated"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding NextUntranslatedKeyCommand}" />
+            </Grid>
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" MaxWidth="140" />
+                <ColumnDefinition Width="*" MaxWidth="700" />
+                <ColumnDefinition Width="*" MaxWidth="700" />
+              </Grid.ColumnDefinitions>
+              <Grid.RowDefinitions>
+                <RowDefinition MinHeight="60" Height="Auto" MaxHeight="350" />
+                <RowDefinition MinHeight="60" Height="Auto" MaxHeight="350" />
+                <RowDefinition MinHeight="60" Height="Auto" MaxHeight="350" />
+              </Grid.RowDefinitions>
+              <TextBlock Grid.Row="0" Grid.Column="0"
+                         Text="English text"
+                         Margin="5" />
+              <ScrollViewer Grid.Row="0" Grid.Column="1"
+                            MaxHeight="350"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBlock Text="{Binding CurrentKeyEnglish}"
+                           TextWrapping="Wrap"
+                           Margin="10" />
+              </ScrollViewer>
+              <ScrollViewer Grid.Row="0" Grid.Column="2"
+                            MaxHeight="350"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBlock FontFamily="{StaticResource Unifont}"
+                           Text="{Binding CurrentKeyEnglishDisplay}"
+                           TextWrapping="Wrap"
+                           Margin="10" />
+              </ScrollViewer>
+              <ScrollViewer Grid.Row="1" Grid.Column="0"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBlock Text="Translation text"
+                           Margin="10" />
+              </ScrollViewer>
+              <ScrollViewer Grid.Row="1" Grid.Column="1"
+                            MaxHeight="350"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBox Text="{Binding CurrentKeyTranslation}"
+                         LostFocus="AutosaveChanges"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Margin="10" />
+              </ScrollViewer>
+              <ScrollViewer Grid.Row="1" Grid.Column="2"
+                            MaxHeight="350"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBlock FontFamily="{StaticResource Unifont}"
+                           Text="{Binding CurrentKeyTranslationDisplay}"
+                           TextWrapping="Wrap"
+                           Margin="10" />
+              </ScrollViewer>
+              <ScrollViewer Grid.Row="2" Grid.Column="0"
+                            VerticalScrollBarVisibility="Visible">
+                <TextBlock Text="Translation notes"
+                           Margin="10" />
+              </ScrollViewer>
+              <TextBlock Grid.Row="2" Grid.Column="1"
+                         Text="{Binding CurrentKeyNotes}"
+                         TextWrapping="Wrap"
+                         Margin="10" />
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </TabItem>
+  </TabControl>
+</Window>

@@ -1,0 +1,16 @@
+# IDE specific stuff
+.idea/
+.vs/
+*.suo
+*.user
+
+# Build stuff
+[Bb]in/
+[Oo]bj/
+[Pp]ackages/
+_UpgradeReport_Files/
+
+# OS junk
+Thumbs.db
+Desktop.ini
+.DS_Store
