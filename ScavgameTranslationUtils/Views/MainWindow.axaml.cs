@@ -15,23 +15,50 @@ namespace ScavgameTranslationUtils.Views;
 
 public partial class MainWindow : Window
 {
+    public record SimpleCultureInfo(string DisplayName, string Name);
+    
+    static MainWindow()
+    {
+        var baseCultures = CultureInfo.GetCultures(CultureTypes.AllCultures)
+            .ToList();
+
+        var cultureList = baseCultures
+            .Select(x => new SimpleCultureInfo(x.DisplayName, x.Name))
+            .ToList();
+
+        cultureList.RemoveAll(x => x.Name == ""); // Don't need the invariant culture
+
+        AliasLocale("zh-Hans-CN", "zh-CN"); // Uses simplified system in scavgame-locale
+        AliasLocale("zh-Hans-SG", "zh-SG"); // Assuming to be simplified
+        AliasLocale("zh-Hant-MO", "zh-MO"); // Assuming to be traditional
+        AliasLocale("zh-Hant-HK", "zh-HK"); // Assuming to be traditional
+        AliasLocale("zh-Hant-TW", "zh-TW"); // Uses traditional system in scavgame-locale
+
+        KnownCultures = cultureList.OrderBy(x => x.DisplayName).ToList();
+        TranslationNames = KnownCultures
+            .Select(x => $"{x.DisplayName} [{x.Name}]")
+            .ToList();
+        TranslationCountryCodes = KnownCultures
+            .Select(x => x.Name)
+            .ToList();
+
+        void AliasLocale(string original, string alias)
+        {
+            var locale = cultureList.Find(x => x.Name == original);
+        
+            if (locale != null)
+                cultureList.Add(new SimpleCultureInfo(locale.DisplayName, alias));
+        }
+    }
+    
     // TODO: Better pattern?
     public MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;
 
-    public static List<CultureInfo> KnownCultures =
-        CultureInfo.GetCultures(CultureTypes.AllCultures)
-            .Where(x => Regex.IsMatch(x.Name, "^[a-z]{2}(?:-[A-Z]{2})?$"))
-            .ToList();
+    public static List<SimpleCultureInfo> KnownCultures { get; }
 
-    public static List<string> TranslationNames { get; } =
-        KnownCultures
-            .Select(x => $"{x.DisplayName} [{x.Name}]")
-            .ToList();
+    public static List<string> TranslationNames { get; }
     
-    public static List<string> TranslationCountryCodes { get; } =
-        KnownCultures
-            .Select(x => x.Name)
-            .ToList();
+    public static List<string> TranslationCountryCodes { get; }
 
     public int SelectedCountryCode { get; set; } = -1;
     
