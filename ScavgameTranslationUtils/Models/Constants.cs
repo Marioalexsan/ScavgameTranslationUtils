@@ -1,14 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace ScavgameTranslationUtils.Models;
 
 public static class Constants
 {
-    public static string TurnToDisplayPathJoined(Workspace workspace, string path)
-        => string.Join(" > ", TurnToDisplayPath(workspace, path));
-
-    public static string[] TurnToDisplayPath(Workspace workspace, string path)
+    public static (string[] DisplayParts, string[] Parts) SplitToDisplayAndParts(Workspace workspace, string path)
     {
         static string UpperFirst(string part)
         {
@@ -18,50 +16,64 @@ public static class Constants
         }
 
         var parts = path.Split(':');
+        var displayParts = parts.ToArray();
 
-        if ((parts[0] == "main"
-             || parts[0] == "buildings"
-             || parts[0] == "other"
-             || parts[0] == "moodles")
-            && parts.Length >= 2)
+        if (parts[0] == "main"
+            || parts[0] == "buildings"
+            || parts[0] == "other"
+            || parts[0] == "moodles")
         {
-            parts[1] = $"\"{parts[1]}\"";
+            displayParts[0] = UpperFirst(parts[0]);
+
+            if (displayParts.Length >= 2)
+                displayParts[1] = $"\"{parts[1]}\"";
         }
 
-        else if (parts[0] == "character" && parts.Length >= 4)
+        else if (parts[0] == "character")
         {
-            parts[1] = int.TryParse(parts[1], out var characterIndex)
-                ? MapCharacterIndexToCharacter(characterIndex)
-                : parts[1];
-
-            parts[2] = $"\"{parts[2]}\"";
+            displayParts[0] = UpperFirst(parts[0]);
+            
+            if (displayParts.Length >= 2)
+                displayParts[1] = int.TryParse(parts[1], out var characterIndex)
+                    ? MapCharacterIndexToCharacter(characterIndex)
+                    : parts[1];
+            
+            if (displayParts.Length >= 3)
+                displayParts[2] = $"\"{parts[2]}\"";
         }
 
-        else if (parts[0] == "notes" && parts.Length >= 4)
+        else if (parts[0] == "notes")
         {
-            parts[1] = int.TryParse(parts[1], out var biomeIndex)
-                ? MapBiomeIndexToBiome(workspace, biomeIndex)
-                : parts[1];
-
-            parts[2] = int.TryParse(parts[2], out var noteIndex)
-                ? MapNoteIndexToNote(workspace, noteIndex)
-                : parts[2];
-
-            parts[3] = UpperFirst(parts[3]);
+            displayParts[0] = UpperFirst(parts[0]);
+            
+            if (displayParts.Length >= 2)
+                displayParts[1] = int.TryParse(parts[1], out var biomeIndex)
+                    ? MapBiomeIndexToBiome(workspace, biomeIndex)
+                    : parts[1];
+            
+            if (displayParts.Length >= 3)
+                displayParts[2] = int.TryParse(parts[2], out var noteIndex)
+                    ? MapNoteIndexToNote(workspace, noteIndex)
+                    : parts[2];
+            
+            if (displayParts.Length >= 4)
+                displayParts[3] = UpperFirst(parts[3]);
         }
 
         else if (parts[0] == "pdaNotes" && parts.Length >= 3)
         {
-            parts[1] = int.TryParse(parts[1], out var pdaIndex)
-                ? MapPdaNoteIndexToPdaNote(workspace, pdaIndex)
-                : parts[1];
-
-            parts[2] = UpperFirst(parts[2]);
+            displayParts[0] = UpperFirst(parts[0]);
+            
+            if (displayParts.Length >= 2)
+                displayParts[1] = int.TryParse(parts[1], out var pdaIndex)
+                    ? MapPdaNoteIndexToPdaNote(workspace, pdaIndex)
+                    : parts[1];
+            
+            if (displayParts.Length >= 3)
+                displayParts[2] = UpperFirst(parts[2]);
         }
 
-        parts[0] = UpperFirst(parts[0]);
-
-        return parts;
+        return (displayParts, parts);
     }
 
     public static string MapCharacterIndexToCharacter(int index)

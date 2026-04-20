@@ -93,16 +93,16 @@ public class Localization
     {
         var paths = new List<string>();
         
-        paths.AddRange(Main.Keys.Order().Select(key => $"main:{key}"));
-        paths.AddRange(Buildings.Keys.Order().Select(key => $"buildings:{key}"));
-        paths.AddRange(Moodles.Keys.Order().Select(key => $"moodles:{key}"));
-        paths.AddRange(Other.Keys.Order().Select(key => $"other:{key}"));
+        paths.AddRange(Main.Keys.Select(key => $"main:{key}"));
+        paths.AddRange(Buildings.Keys.Select(key => $"buildings:{key}"));
+        paths.AddRange(Moodles.Keys.Select(key => $"moodles:{key}"));
+        paths.AddRange(Other.Keys.Select(key => $"other:{key}"));
 
         for (int characterIndex = 0; characterIndex < Character.Count; characterIndex++)
         {
             var texts = Character[characterIndex];
 
-            foreach (var (key, variants) in texts.OrderBy(x => x.Key))
+            foreach (var (key, variants) in texts)
             {
                 for (int textVariant = 0; textVariant < variants.Count; textVariant++)
                     paths.Add($"character:{characterIndex}:{key}:{textVariant}");

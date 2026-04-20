@@ -116,6 +116,7 @@ public class Workspace
 
     public void SetText(string path, string text)
     {
+        Program.LogDebug($"Setting translation key {path}");
         _hasPendingChanges = true;
         _translation.SetTextByPath(path, text);
     }
@@ -125,6 +126,7 @@ public class Workspace
         get => _translation.Name;
         set
         {
+            Program.LogDebug($"Setting translation name as {value}");
             _hasPendingChanges = true;
             _translation.Name = value;
         }
@@ -135,6 +137,7 @@ public class Workspace
         get => _translation.Description;
         set
         {
+            Program.LogDebug($"Setting translation description as {value}");
             _hasPendingChanges = true;
             _translation.Description = value;
         }
@@ -173,7 +176,7 @@ public class Workspace
         await JsonSerializer.SerializeAsync(translationStream, _translation, CreateContext(IndentSize).Localization);
 
         _hasPendingChanges = false;
-        Console.WriteLine("Translation saved!");
+        Program.LogDebug("Translation saved!");
     }
 
     private static string GetSanitizedCurrentTime()
@@ -200,7 +203,7 @@ public class Workspace
         var pathHash = BitConverter.ToString(sHA.ComputeHash(Encoding.UTF32.GetBytes(translationDirectory))).Replace("-", "").Substring(0, 8);
         var backupPath = Path.Combine(BackupsPath, $"{translationName}-{pathHash}-{GetSanitizedCurrentTime()}-backup.json");
         
-        Console.WriteLine($"Creating backup {backupPath}");
+        Program.LogDebug($"Creating backup {backupPath}");
 
         await using (var translationStream = File.Open(backupPath, FileMode.Create, FileAccess.Write))
         {
@@ -214,7 +217,7 @@ public class Workspace
 
         foreach (var backup in backupsToDelete)
         {
-            Console.WriteLine($"Deleting backup {backup}");
+            Program.LogDebug($"Deleting backup {backup}");
             File.Delete(backup);
         }
     }

@@ -79,10 +79,10 @@
     </TabItem>
     <TabItem Header="Translation">
       <Grid RowDefinitions="*" ColumnDefinitions="*, 4*">
-        <TreeView ItemsSource="{Binding DisplayNodes}" SelectedItem="{Binding SelectedTreeViewItem}">
+        <TreeView Grid.Row="0" Grid.Column="0" ItemsSource="{Binding NavData.TreeView}" SelectedItem="{Binding SelectedTreeViewItem}">
           <TreeView.ItemTemplate>
             <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-              <TextBlock Text="{Binding DisplayLabel}"/>
+              <TextBlock Text="{Binding PathPartView}"/>
             </TreeDataTemplate>
           </TreeView.ItemTemplate>
         </TreeView>
@@ -94,13 +94,16 @@
                         Margin="5"
                         MinWidth="400"
                         SelectedIndex="{Binding CurrentKeyIndex}"
-                        ItemsSource="{Binding DisplayKeys}">
+                        ItemsSource="{Binding NavData.ListView}">
                 <ComboBox.ItemTemplate>
                   <DataTemplate>
-                    <TextBlock Text="{Binding Display}" />
+                    <TextBlock Text="{Binding FullPathView}" />
                   </DataTemplate>
                 </ComboBox.ItemTemplate>
               </ComboBox>
+              <TextBlock Text="Sort order" Margin="5" />
+              <ComboBox ItemsSource="{Binding DisplayKeySortOptions}"
+                        SelectedItem="{Binding SelectedDisplayKeySorting}"/>
             </StackPanel>
             <Grid HorizontalAlignment="Left">
               <Grid.RowDefinitions>

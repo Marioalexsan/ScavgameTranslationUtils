@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using ScavgameTranslationUtils.Models;
@@ -55,6 +56,12 @@ static class Program
     }
     
     public static AppSettings Settings { get; private set; }
+
+    [Conditional("DEBUG")]
+    public static void LogDebug(string format, params object[] args)
+    {
+        Console.WriteLine(format, args);
+    }
 
     static Program()
     {

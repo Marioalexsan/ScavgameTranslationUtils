@@ -69,7 +69,7 @@ public partial class MainWindowViewModel : ObservableObject
         catch (Exception e)
         {
             // TODO: Better error handling
-            Console.WriteLine(e);
+            Program.LogDebug(e.ToString());
         }
     }
 }
