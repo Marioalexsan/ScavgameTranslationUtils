@@ -16,6 +16,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
   - `zh-Hant-HK` => `zh-HK`
   - `zh-Hant-TW` => `zh-TW`
 - Option to sort keys in the "Translation page" in EN.json order instead of alphabetically
+- Searching through translation data by key, original text, or current translated text
+- Allow resizing the columns in the Translation tab
 
 ## [2026.04.18]
 

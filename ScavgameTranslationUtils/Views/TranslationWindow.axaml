@@ -13,13 +13,12 @@
   <TabControl SelectionChanged="AutosaveChanges">
     <TabItem Header="Metadata">
       <StackPanel>
-        <Grid>
+        <Grid ColumnSpacing="5" RowSpacing="5" Margin="5">
           <Grid.ColumnDefinitions>
             <ColumnDefinition MinWidth="80" MaxWidth="300" />
             <ColumnDefinition MinWidth="80" MaxWidth="300" />
           </Grid.ColumnDefinitions>
           <Grid.RowDefinitions>
-            <RowDefinition MinHeight="80" MaxHeight="300" />
             <RowDefinition MinHeight="80" MaxHeight="300" />
             <RowDefinition MinHeight="80" MaxHeight="300" />
           </Grid.RowDefinitions>
@@ -41,35 +40,36 @@
                      Text="{Binding CurrentDescription}"
                      LostFocus="AutosaveChanges" />
           </ScrollViewer>
-          <TextBlock Grid.Row="2" Grid.Column="0"
-                     Text="Indent Size" />
-          <ComboBox Grid.Row="2" Grid.Column="1"
-                   ItemsSource="{Binding AllowedIndents}"
-                   SelectedItem="{Binding IndentSize}"
-                   SelectionChanged="AutosaveChanges" />
         </Grid>
-        <Grid>
+        <Grid ColumnSpacing="5" RowSpacing="5" Margin="5">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition MinWidth="80" MaxWidth="300" />
-            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+            <ColumnDefinition MinWidth="40" Width="Auto" MaxWidth="300" />
+            <ColumnDefinition MinWidth="40" Width="Auto" MaxWidth="300" />
           </Grid.ColumnDefinitions>
           <Grid.RowDefinitions>
             <RowDefinition MinHeight="80" />
+            <RowDefinition MinHeight="80" />
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0" Grid.Column="0"
+                     Text="Indent Size" />
+          <ComboBox Grid.Row="0" Grid.Column="1"
+                    ItemsSource="{Binding AllowedIndents}"
+                    SelectedItem="{Binding IndentSize}"
+                    SelectionChanged="AutosaveChanges" />
+          <TextBlock Grid.Row="1" Grid.Column="0"
                      Text="Translation progress:" />
-          <TextBlock Grid.Row="0" Grid.Column="1"
+          <TextBlock Grid.Row="1" Grid.Column="1"
                      Text="{Binding TranslationProgress}" />
         </Grid>
         <StackPanel Orientation="Horizontal">
           <Button Click="SaveChangesManual"
                   Content="Save Changes" />
           <CheckBox IsChecked="{Binding #ThisWindow.AutosaveEnabled}"
-                    Content="Enable autosaving" 
-                    Margin="20, 0, 0, 0"/>
+                    Content="Enable autosaving"
+                    Margin="20, 0, 0, 0" />
           <CheckBox IsChecked="{Binding SortKeys}"
-                    Content="Sort keys before saving" 
-                    Margin="20, 0, 0, 0"/>
+                    Content="Sort keys before saving"
+                    Margin="20, 0, 0, 0" />
         </StackPanel>
         <Button Click="CloseWindow"
                 Content="Save Changes and Close" />
@@ -78,18 +78,65 @@
       </StackPanel>
     </TabItem>
     <TabItem Header="Translation">
-      <Grid RowDefinitions="*" ColumnDefinitions="*, 4*">
-        <TreeView Grid.Row="0" Grid.Column="0" ItemsSource="{Binding NavData.TreeView}" SelectedItem="{Binding SelectedTreeViewItem}">
-          <TreeView.ItemTemplate>
-            <TreeDataTemplate ItemsSource="{Binding SubNodes}">
-              <TextBlock Text="{Binding PathPartView}"/>
-            </TreeDataTemplate>
-          </TreeView.ItemTemplate>
-        </TreeView>
-        <ScrollViewer Grid.Row="0" Grid.Column="1" VerticalScrollBarVisibility="Visible">
-          <StackPanel Orientation="Vertical" Margin="0,0,40,0">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition MinWidth="150" Width="*"/>
+          <ColumnDefinition Width="14"/>
+          <ColumnDefinition MinWidth="300" Width="4*"/>
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0" 
+              ColumnDefinitions="*" 
+              RowDefinitions="Auto, Auto, Auto, Auto *">
+          <Button Grid.Row="0" Grid.Column="0" 
+                  Command="{Binding ClearSearchCommand}" 
+                  Content="Clear search" />
+          <TextBox Grid.Row="1" Grid.Column="0" 
+                   HorizontalAlignment="Stretch" 
+                   Text="{Binding KeySearchText, Delay=500}"
+                   PlaceholderText="Search for key..." />
+          <TextBox Grid.Row="2" Grid.Column="0" 
+                   HorizontalAlignment="Stretch" 
+                   Text="{Binding OriginalSearchText, Delay=500}"
+                   PlaceholderText="Search text in EN.json..." />
+          <TextBox Grid.Row="3" Grid.Column="0" 
+                   HorizontalAlignment="Stretch" 
+                   Text="{Binding TranslationSearchText, Delay=500}"
+                   PlaceholderText="Search text in locale..." />
+          <ListBox Grid.Row="4" Grid.Column="0" 
+                   IsVisible="{Binding ShouldDoSearch}"
+                   Margin="5" 
+                   ItemsSource="{Binding SearchMatchingKeys}" SelectedItem="{Binding SelectedSearchListItem}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding FullPathDisplay}" />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <TreeView Grid.Row="4" Grid.Column="0" 
+                    IsVisible="{Binding !ShouldDoSearch}"
+                    ItemsSource="{Binding NavData.TreeView}" 
+                    SelectedItem="{Binding SelectedTreeViewItem}">
+            <TreeView.ItemTemplate>
+              <TreeDataTemplate ItemsSource="{Binding SubNodes}">
+                <TextBlock Text="{Binding PathPartView}" />
+              </TreeDataTemplate>
+            </TreeView.ItemTemplate>
+          </TreeView>
+        </Grid>
+        <GridSplitter Grid.Row="0" Grid.Column="1"
+                      Background="LightGray"
+                      Width="2"
+                      Margin="6"/>
+        <ScrollViewer Grid.Row="0" Grid.Column="2" 
+                      VerticalScrollBarVisibility="Visible">
+          <StackPanel Orientation="Vertical" 
+                      Margin="0,0,40,0">
             <StackPanel Orientation="Horizontal">
-              <TextBlock Text="Key" Margin="5" />
+              <TextBlock Text="Key" 
+                         Margin="5" />
               <ComboBox Name="MainKeysComboBox"
                         Margin="5"
                         MinWidth="400"
@@ -103,7 +150,7 @@
               </ComboBox>
               <TextBlock Text="Sort order" Margin="5" />
               <ComboBox ItemsSource="{Binding DisplayKeySortOptions}"
-                        SelectedItem="{Binding SelectedDisplayKeySorting}"/>
+                        SelectedItem="{Binding SelectedDisplayKeySorting}" />
             </StackPanel>
             <Grid HorizontalAlignment="Left">
               <Grid.RowDefinitions>

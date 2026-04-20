@@ -197,6 +197,9 @@ public partial class TranslationWindowViewModel : ObservableObject
         // Has to be done *after* setting the new item source!
         var updatedNode = NavData.ListView.FirstOrDefault(x => x.FullPath == currentKey);
         CurrentKeyIndex = updatedNode == null ? 0 : NavData.ListView.IndexOf(updatedNode);
+        
+        // Let's also do this just in case
+        ClearSearch();
     }
 
     [ObservableProperty]
@@ -236,12 +239,91 @@ public partial class TranslationWindowViewModel : ObservableObject
         CurrentKeyIndex = index;
     }
 
-    private static string GetKeyCategory(string key)
-    {
-        var category = key.Split(':')[0];
-        return category.Length > 1 ? char.ToUpper(category[0]) + category[1..] : category;
-    }
+    [ObservableProperty]
+    private object? _selectedSearchListItem;
     
+    partial void OnSelectedSearchListItemChanged(object? value)
+    {
+        if (value is not DisplayNode node || !node.IsTerminalNode)
+            return;
+
+        var index = NavData.ListView.IndexOf(node);
+
+        if (index == -1)
+            return;
+
+        CurrentKeyIndex = index;
+    }
+
+    [ObservableProperty]
+    private bool _shouldDoSearch;
+
+    public ObservableCollection<DisplayNode> SearchMatchingKeys { get; } = [];
+    
+    [ObservableProperty]
+    public string _keySearchText = "";
+    
+    partial void OnKeySearchTextChanged(string value) => UpdateSearch();
+    
+    [ObservableProperty]
+    public string _originalSearchText = "";
+    
+    partial void OnOriginalSearchTextChanged(string value) => UpdateSearch();
+    
+    [ObservableProperty]
+    public string _translationSearchText = "";
+
+    partial void OnTranslationSearchTextChanged(string value) => UpdateSearch();
+
+    private void UpdateSearch()
+    {
+        SearchMatchingKeys.Clear();
+
+        bool shouldSearchByKey = KeySearchText.Length >= 2;
+        bool shouldSearchByOriginal = OriginalSearchText.Length >= 2;
+        bool shouldSearchByTranslation = TranslationSearchText.Length >= 2;
+        
+        ShouldDoSearch = shouldSearchByKey || shouldSearchByOriginal || shouldSearchByTranslation;
+
+        if (!ShouldDoSearch)
+            return;
+        
+        if (shouldSearchByKey)
+        {
+            foreach (var node in NavData.ListView)
+            {
+                bool matches =
+                    node.FullPath.Contains(KeySearchText, StringComparison.InvariantCultureIgnoreCase) ||
+                    node.FullPathDisplay.Contains(KeySearchText, StringComparison.InvariantCultureIgnoreCase);
+                
+                if (matches)
+                    SearchMatchingKeys.Add(node);
+            }
+        }
+
+        if (shouldSearchByOriginal)
+        {
+            foreach (var node in NavData.ListView)
+            {
+                var text = Workspace.GetOriginalText(node.FullPath);
+
+                if (text != null && text.Contains(OriginalSearchText, StringComparison.InvariantCultureIgnoreCase))
+                    SearchMatchingKeys.Add(node);
+            }
+        }
+
+        if (shouldSearchByTranslation)
+        {
+            foreach (var node in NavData.ListView)
+            {
+                var text = Workspace.GetText(node.FullPath);
+
+                if (text != null && text.Contains(TranslationSearchText, StringComparison.InvariantCultureIgnoreCase))
+                    SearchMatchingKeys.Add(node);
+            }
+        }
+    }
+
     public string PaginationText => $"Key {CurrentKeyIndex + 1} / Total {Workspace.Paths.Count} / {GetKeyCategory(CurrentKey)}";
 
     public string TranslationProgress
@@ -266,7 +348,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(CurrentKeyTranslation))]
     [NotifyPropertyChangedFor(nameof(CurrentKeyEnglishDisplay))]
     [NotifyPropertyChangedFor(nameof(CurrentKeyTranslationDisplay))]
-    private string _currentKey = "";
+    private string _currentKey;
 
     public string CurrentKeyNotes => Constants.GetTranslationNotes(Workspace, CurrentKey);
 
@@ -339,6 +421,20 @@ public partial class TranslationWindowViewModel : ObservableObject
             if (SetProperty(ref oldValue, value))
                 Workspace.SortKeys = value;    
         }
+    }
+
+    private static string GetKeyCategory(string key)
+    {
+        var category = key.Split(':')[0];
+        return category.Length > 1 ? char.ToUpper(category[0]) + category[1..] : category;
+    }
+    
+    [RelayCommand]
+    public void ClearSearch()
+    {
+        KeySearchText = "";
+        OriginalSearchText = "";
+        TranslationSearchText = "";
     }
 
     [RelayCommand(CanExecute = nameof(CanExecutePreviousMainKey))]
