@@ -7,6 +7,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+## [2026.04.21]
+
 ### Added
 - More locales are available to pick for new translations
 - Aliases for `zh` locales to align with translations in scavgame-locale:
