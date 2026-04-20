@@ -38,7 +38,10 @@ public partial class TranslationWindowViewModel : ObservableObject
         {
             if (IsTerminalNode)
             {
-                AllItemsTranslated = workspace.GetText(FullPath) != null;
+                var translatedText = workspace.GetText(FullPath);
+                AllItemsTranslated = 
+                    !string.IsNullOrWhiteSpace(translatedText)
+                    || translatedText == "" && workspace.GetOriginalText(FullPath) == "";
             }
             else
             {

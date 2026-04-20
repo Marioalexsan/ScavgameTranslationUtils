@@ -249,17 +249,17 @@ public class Localization
                     // Backfill if needed
                     while (characterIndex >= Character.Count)
                         Character.Add([]);
+
+                    if (!Character[characterIndex].TryGetValue(parts[2], out var variants))
+                        variants = Character[characterIndex][parts[2]] = [];
                     
-                    if (Character[characterIndex].TryGetValue(parts[2], out var variants))
+                    if (int.TryParse(parts[3], out var variantIndex) && variantIndex >= 0)
                     {
-                        if (int.TryParse(parts[3], out var variantIndex) && variantIndex >= 0)
-                        {
-                            // Backfill if needed
-                            while (variantIndex >= variants.Count)
-                                variants.Add("");
+                        // Backfill if needed
+                        while (variantIndex >= variants.Count)
+                            variants.Add("");
                             
-                            variants[variantIndex] = text;
-                        }
+                        variants[variantIndex] = text;
                     }
                 }
             }

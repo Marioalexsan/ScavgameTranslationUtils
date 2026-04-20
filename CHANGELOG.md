@@ -19,6 +19,12 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 - Searching through translation data by key, original text, or current translated text
 - Allow resizing the columns in the Translation tab
 
+### Changed
+- Slightly adjusted the condition for considering a key as translated
+
+### Fixed
+- Adding text for `character` keys on fresh translations didn't work correctly
+
 ## [2026.04.18]
 
 ### Added
