@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ScavgameTranslationUtils.Models;
@@ -156,9 +158,10 @@ public partial class TranslationWindowViewModel : ObservableObject
         public required List<(string Category, int Start)> CategoryStarts { get; init; }
     }
     
-    public TranslationWindowViewModel(Workspace workspace)
+    public TranslationWindowViewModel(GameAssets? gameAssets, Workspace workspace)
     {
         Workspace = workspace;
+        GameAssets = gameAssets;
         
         _englishJsonNavData = NavigationData.Create(workspace, false);
         _alphabeticNavData = NavigationData.Create(workspace, true);
@@ -175,6 +178,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     public List<string> DisplayKeySortOptions { get; } = ["Like EN.json", "Alphabetically"];
 
+    public GameAssets? GameAssets { get; }
     public Workspace Workspace { get; }
 
     [ObservableProperty]
@@ -373,14 +377,21 @@ public partial class TranslationWindowViewModel : ObservableObject
             }
         }
     }
-    
-    public string? CurrentKeyEnglishDisplay => CurrentKeyEnglish != null
-        ? Constants.PreprocessText(CurrentKey, CurrentKeyEnglish)
-        : null;
 
-    public string? CurrentKeyTranslationDisplay => CurrentKeyTranslation != null
-        ? Constants.PreprocessText(CurrentKey, CurrentKeyTranslation)
-        : null;
+    public InlineCollection CurrentKeyEnglishDisplay => Render(CurrentKey, CurrentKeyEnglish);
+    public InlineCollection CurrentKeyTranslationDisplay => Render(CurrentKey, CurrentKeyTranslation);
+
+    private InlineCollection Render(string key, string? text)
+    {
+        if (text == null)
+            return [];
+        
+        // TODO Parse properly
+        if (key.EndsWith(":sprite"))
+            return Constants.RenderSprite(GameAssets?.GetGameSprite(text));
+        
+        return Constants.RenderText(GameAssets, Constants.ReplacePlaceholders(key, text));
+    }
     
     public string CurrentName
     {

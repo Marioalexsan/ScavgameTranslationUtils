@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -65,6 +64,37 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+    }
+
+    private void OpenGameExecutable(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+
+        Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
+            {
+                Title = "Select Casualties: Unknown executable",
+                AllowMultiple = false,
+                FileTypeFilter =
+                [
+                    new FilePickerFileType("CasualtiesUnknown.exe")
+                    {
+                        Patterns = ["CasualtiesUnknown.exe"]
+                    },
+                    new FilePickerFileType("Any executable")
+                    {
+                        Patterns = ["*.exe"]
+                    }
+                ]
+            });
+
+            if (files.Count == 0)
+                return;
+
+            await ViewModel.OpenGameAssets(files[0].Path.LocalPath);
+        });
     }
 
     private void OpenOriginalLocalization(object? sender, RoutedEventArgs e)
@@ -178,7 +208,7 @@ public partial class MainWindow : Window
 
         var translationWindow = new TranslationWindow()
         {
-            DataContext = new TranslationWindowViewModel(ViewModel.Workspace)
+            DataContext = new TranslationWindowViewModel(ViewModel.GameAssets, ViewModel.Workspace)
         };
         Hide();
 

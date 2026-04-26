@@ -11,6 +11,9 @@ public class AppSettings
 
     [JsonPropertyName("englishTranslationPath")]
     public string? EnglishTranslationPath { get; set; }
+    
+    [JsonPropertyName("gameExecutablePath")]
+    public string? GameExecutablePath { get; set; }
 
     public static async Task<AppSettings> LoadAsync()
     {

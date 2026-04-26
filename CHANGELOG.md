@@ -7,6 +7,15 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+### Added
+- TextMeshPro tags used by Casualties: Unknown are now parsed and rendered in the text display
+- The application can now load sprites from Casualties: Unknown and display them in the tool
+  - Sprite keys, such as note sprites, will render their respective sprite
+  - `<sprite index=N>` tags render their respective icon
+
+### Fixed
+- Loading translation files in encodings other than UTF-8 would fail
+
 ## [2026.04.21]
 
 ### Added
@@ -23,6 +32,7 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ### Changed
 - Slightly adjusted the condition for considering a key as translated
+- Allow selecting text in the original English text block
 
 ### Fixed
 - Adding text for `character` keys on fresh translations didn't work correctly

@@ -67,7 +67,7 @@ static class Program
     {
         Settings = AppSettings.LoadAsync().Result;
     }
-    
+
     [STAThread]
     public static void Main(string[] args) // do not change this to async
     {

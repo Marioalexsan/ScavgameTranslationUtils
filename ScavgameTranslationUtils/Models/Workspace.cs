@@ -86,7 +86,10 @@ public class Workspace
         
         await using (var originalStream = File.OpenRead(originalPath))
         {
-            original = await JsonSerializer.DeserializeAsync(originalStream, context.Localization) 
+            // Use a stream reader to handle any potential UTF BOMs
+            var streamReader = new StreamReader(originalStream);
+            var text = await streamReader.ReadToEndAsync();
+            original = JsonSerializer.Deserialize(text, context.Localization) 
                        ?? throw new InvalidOperationException("Failed to load original text.");
         }
 
@@ -94,7 +97,10 @@ public class Workspace
         {
             await using (var translationStream = File.OpenRead(translationPath))
             {
-                translation = await JsonSerializer.DeserializeAsync(translationStream, context.Localization) 
+                // Use a stream reader to handle any potential UTF BOMs
+                var streamReader = new StreamReader(translationStream);
+                var text = await streamReader.ReadToEndAsync();
+                translation = JsonSerializer.Deserialize(text, context.Localization)
                               ?? throw new InvalidOperationException("Failed to load translation text.");
             }
         }

@@ -8,6 +8,7 @@
         <ApplicationIcon>Assets/icon2.ico</ApplicationIcon>
         <Version>2026.04.21</Version>
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+        <TrimmerSingleWarn>false</TrimmerSingleWarn>
     </PropertyGroup>
 
     <ItemGroup>
@@ -20,5 +21,8 @@
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.1"/>
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.1"/>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
+        <PackageReference Include="AssetsTools.NET" Version="3.0.4" />
+        <PackageReference Include="AssetsTools.NET.MonoCecil" Version="3.0.4" />
+        <PackageReference Include="AssetsTools.NET.Texture" Version="3.0.2" />
     </ItemGroup>
 </Project>

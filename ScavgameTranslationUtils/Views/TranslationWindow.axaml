@@ -3,7 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:ScavgameTranslationUtils.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
         x:Class="ScavgameTranslationUtils.Views.TranslationWindow"
         x:DataType="vm:TranslationWindowViewModel"
         Closing="WindowClosing"
@@ -209,15 +209,19 @@
               <ScrollViewer Grid.Row="0" Grid.Column="1"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
-                <TextBlock Text="{Binding CurrentKeyEnglish}"
-                           TextWrapping="Wrap"
-                           Margin="10" />
+                <SelectableTextBlock Text="{Binding CurrentKeyEnglish}"
+                                     FontFeatures="-liga"
+                                     FontSize="16"
+                                     TextWrapping="Wrap"
+                                     Margin="10" />
               </ScrollViewer>
               <ScrollViewer Grid.Row="0" Grid.Column="2"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBlock FontFamily="{StaticResource Unifont}"
-                           Text="{Binding CurrentKeyEnglishDisplay}"
+                           FontFeatures="-liga"
+                           FontSize="16"
+                           Inlines="{Binding CurrentKeyEnglishDisplay}"
                            TextWrapping="Wrap"
                            Margin="10" />
               </ScrollViewer>
@@ -230,6 +234,8 @@
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBox Text="{Binding CurrentKeyTranslation}"
+                         FontFeatures="-liga"
+                         FontSize="16"
                          LostFocus="AutosaveChanges"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
@@ -239,7 +245,9 @@
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBlock FontFamily="{StaticResource Unifont}"
-                           Text="{Binding CurrentKeyTranslationDisplay}"
+                           FontFeatures="-liga"
+                           FontSize="16"
+                           Inlines="{Binding CurrentKeyTranslationDisplay}"
                            TextWrapping="Wrap"
                            Margin="10" />
               </ScrollViewer>

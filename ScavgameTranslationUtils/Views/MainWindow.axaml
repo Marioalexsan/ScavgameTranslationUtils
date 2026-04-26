@@ -21,6 +21,7 @@
       <RowDefinition MinHeight="40"/>
       <RowDefinition MinHeight="40"/>
       <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="40"/>
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
       <ColumnDefinition MinWidth="200"/>
@@ -33,32 +34,42 @@
            VerticalAlignment="Center"
            Stretch="None" />
     <Button Grid.Row="1" Grid.Column="0"
+            Click="OpenGameExecutable"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            MinWidth="180"
+            Content="Load Game Assets..." />
+    <TextBlock Grid.Row="1" Grid.Column="1"
+               HorizontalAlignment="Center"
+               VerticalAlignment="Center"
+               Text="{Binding GameExecutablePath, FallbackValue='Game assets not found...', TargetNullValue='Game assets not found...'}" />
+    <Button Grid.Row="2" Grid.Column="0"
             Click="OpenOriginalLocalization"
             MinWidth="180"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Content="Select English Locale..." />
-    <TextBlock Grid.Row="1" Grid.Column="1"
+    <TextBlock Grid.Row="2" Grid.Column="1"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
                Text="{Binding EnglishTranslationPath, FallbackValue='English locale not found...', TargetNullValue='English locale not found...'}" />
-    <Button Grid.Row="2" Grid.Column="0"
+    <Button Grid.Row="3" Grid.Column="0"
             Click="OpenTranslationFile"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             MinWidth="180"
             Content="Open Translation File..." />
-    <TextBlock Grid.Row="2" Grid.Column="1"
+    <TextBlock Grid.Row="3" Grid.Column="1"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
                Text="{Binding TranslationPath, FallbackValue='No translation selected...', TargetNullValue='No translation selected...'}" />
-    <Button Grid.Row="3" Grid.Column="0"
+    <Button Grid.Row="4" Grid.Column="0"
             Click="CreateTranslationFile"
             MinWidth="180"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Content="Create Translation File..." />
-    <ComboBox Grid.Row="3" Grid.Column="1"
+    <ComboBox Grid.Row="4" Grid.Column="1"
               Name="CountryCodeComboBox"
               MinWidth="400"
               HorizontalAlignment="Center"
@@ -66,7 +77,7 @@
               PlaceholderText="Specify a locale name to create"
               SelectedIndex="{Binding #MainWindowElement.SelectedCountryCode}"
               ItemsSource="{Binding #MainWindowElement.TranslationNames}" />
-    <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+    <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Orientation="Horizontal"

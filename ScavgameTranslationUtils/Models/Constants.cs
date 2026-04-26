@@ -1,6 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Avalonia.Controls;
+using Avalonia.Controls.Documents;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Media.Immutable;
 
 namespace ScavgameTranslationUtils.Models;
 
@@ -32,12 +37,12 @@ public static class Constants
         else if (parts[0] == "character")
         {
             displayParts[0] = UpperFirst(parts[0]);
-            
+
             if (displayParts.Length >= 2)
                 displayParts[1] = int.TryParse(parts[1], out var characterIndex)
                     ? MapCharacterIndexToCharacter(characterIndex)
                     : parts[1];
-            
+
             if (displayParts.Length >= 3)
                 displayParts[2] = $"\"{parts[2]}\"";
         }
@@ -45,17 +50,17 @@ public static class Constants
         else if (parts[0] == "notes")
         {
             displayParts[0] = UpperFirst(parts[0]);
-            
+
             if (displayParts.Length >= 2)
                 displayParts[1] = int.TryParse(parts[1], out var biomeIndex)
                     ? MapBiomeIndexToBiome(workspace, biomeIndex)
                     : parts[1];
-            
+
             if (displayParts.Length >= 3)
                 displayParts[2] = int.TryParse(parts[2], out var noteIndex)
                     ? MapNoteIndexToNote(workspace, noteIndex)
                     : parts[2];
-            
+
             if (displayParts.Length >= 4)
                 displayParts[3] = UpperFirst(parts[3]);
         }
@@ -63,12 +68,12 @@ public static class Constants
         else if (parts[0] == "pdaNotes" && parts.Length >= 3)
         {
             displayParts[0] = UpperFirst(parts[0]);
-            
+
             if (displayParts.Length >= 2)
                 displayParts[1] = int.TryParse(parts[1], out var pdaIndex)
                     ? MapPdaNoteIndexToPdaNote(workspace, pdaIndex)
                     : parts[1];
-            
+
             if (displayParts.Length >= 3)
                 displayParts[2] = UpperFirst(parts[2]);
         }
@@ -107,7 +112,178 @@ public static class Constants
         return $"PDA {index}";
     }
 
-    public static string PreprocessText(string path, string text)
+    public static InlineCollection RenderSprite(Bitmap? image)
+    {
+        if (image != null)
+        {
+            return
+            [
+                new InlineUIContainer(new Image()
+                {
+                    Source = image,
+                    Width = image.Size.Width,
+                    Height = image.Size.Height
+                })
+            ];
+        }
+
+        return
+        [
+            new Run("<Sprite not available>")
+            {
+                Foreground = Brushes.Yellow,
+                FontStyle = FontStyle.Italic
+            }
+        ];
+    }
+
+    // Assumes TextMeshPro rendering
+    public static InlineCollection RenderText(GameAssets? gameAssets, string text)
+    {
+        InlineCollection inlines = [];
+        var currentIndex = 0;
+
+        IBrush foreground = Brushes.White;
+        bool bold = false;
+        bool italic = false;
+        float fontSizePct = 100;
+        float baseFontSize = 18; // TODO: Somewhat hardcoded right now
+
+        while (currentIndex < text.Length)
+        {
+            var openBracketIndex = text.IndexOf('<', currentIndex);
+            var closingBracketIndex = openBracketIndex != -1 ? text.IndexOf('>', openBracketIndex + 1) : -1;
+
+            bool foundTag = closingBracketIndex != -1;
+
+            var runLength = (foundTag ? openBracketIndex : text.Length) - currentIndex;
+
+            if (runLength > 0)
+            {
+                inlines.Add(
+                    new Run(text.Substring(currentIndex, runLength))
+                    {
+                        Foreground = foreground,
+                        FontWeight = bold ? FontWeight.Bold : FontWeight.Normal,
+                        FontStyle = italic ? FontStyle.Italic : FontStyle.Normal,
+                        FontSize = baseFontSize * fontSizePct / 100
+                    }
+                );
+            }
+
+            currentIndex += runLength;
+
+            if (foundTag)
+            {
+                var tagContentsLength = closingBracketIndex - openBracketIndex - 1;
+                var tag = text.Substring(openBracketIndex + 1, tagContentsLength);
+
+                Match match;
+
+                bool shouldPrintRaw = false;
+
+                // TODO: This parsing sucks
+                if (tag == "b")
+                    bold = true;
+                else if (tag == "/b")
+                    bold = false;
+                else if (tag == "i")
+                    italic = true;
+                else if (tag == "/i")
+                    italic = false;
+                else if (tag.StartsWith("sprite"))
+                {
+                    var indexMatch = Regex.Match(tag, "\\bindex=([0-9]+)\\b");
+
+                    Bitmap? image;
+
+                    if (gameAssets != null
+                        && indexMatch.Success
+                        && int.TryParse(indexMatch.Groups[1].Value, out var index)
+                        && (image = gameAssets.GetTMPSprite(index)) != null)
+                    {
+                        inlines.Add(new InlineUIContainer(new Image()
+                        {
+                            Source = image,
+                            Width = image.PixelSize.Width,
+                            Height = image.PixelSize.Height,
+                        }));
+                    }
+                    else
+                    {
+                        inlines.Add(new Run("<Sprite not available>")
+                        {
+                            Foreground = Brushes.Yellow,
+                            FontStyle = FontStyle.Italic,
+                            FontSize = baseFontSize
+                        });
+                    }
+                }
+                else if ((match = Regex.Match(tag, "^size=([0-9]*)%$")).Success)
+                {
+                    if (int.TryParse(match.Groups[1].Value, out var pct))
+                    {
+                        fontSizePct = Math.Max(0, pct);
+                    }
+                    else
+                    {
+                        shouldPrintRaw = true;
+                    }
+                }
+                else if ((match = Regex.Match(tag, "^color=\"([a-z]*)\"$")).Success)
+                {
+                    var color = match.Groups[1].Value;
+
+                    foreground = color switch
+                    {
+                        "black" => Brushes.Black,
+                        "blue" => Brushes.Blue,
+                        "green" => Brushes.Green,
+                        "orange" => Brushes.Orange,
+                        "purple" => Brushes.Purple,
+                        "red" => Brushes.Red,
+                        "white" => Brushes.White,
+                        "yellow" => Brushes.Yellow,
+                        "grey" => Brushes.Gray,
+                        _ => foreground
+                    };
+                }
+                else if ((match = Regex.Match(tag, "^color=#([0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?)$")).Success)
+                {
+                    var colorHex = match.Groups[1].Value;
+
+                    var bytes = Convert.FromHexString(colorHex);
+
+                    var alpha = bytes.Length == 4 ? bytes[3] : (byte)0xFF;
+
+                    foreground = new ImmutableSolidColorBrush(new Color(alpha, bytes[0], bytes[1], bytes[2]));
+                }
+                else if (tag == "/color")
+                    foreground = Brushes.White;
+                else
+                    shouldPrintRaw = true;
+                
+                if (shouldPrintRaw)
+                {
+                    inlines.Add(
+                        new Run(text.Substring(openBracketIndex, tagContentsLength + 2))
+                        {
+                            Foreground = foreground,
+                            FontWeight = bold ? FontWeight.Bold : FontWeight.Normal,
+                            FontStyle = italic ? FontStyle.Italic : FontStyle.Normal,
+                            FontSize = baseFontSize * fontSizePct / 100
+                        }
+                    );
+                }
+
+                currentIndex += tagContentsLength + 2;
+            }
+        }
+
+        return inlines;
+    }
+
+    public static string ReplacePlaceholders(string path, string text)
     {
         var parts = path.Split(':');
 
