@@ -7,6 +7,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+## [2026.04.26]
+
 ### Added
 - TextMeshPro tags used by Casualties: Unknown are now parsed and rendered in the text display
 - The application can now load sprites from Casualties: Unknown and display them in the tool
