@@ -21,12 +21,31 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private string? _translationPath;
 
-    // TODO: Use this
+    public bool HasErrors => GameAssetsHaveErrors || WorkspaceHasErrors;
+    public string ErrorMessage
+    {
+        get
+        {
+            var errors = "";
+
+            if (GameAssetsHaveErrors)
+                errors += "Game assets couldn't be loaded! Is the game install valid?\n";
+
+            if (WorkspaceHasErrors)
+                errors += "Couldn't create workspace! Are the translation files valid?\n";
+
+            return errors.Trim('\n');
+        }
+    }
+    
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasErrors))]
+    [NotifyPropertyChangedFor(nameof(ErrorMessage))]
     private bool _gameAssetsHaveErrors;
 
-    // TODO: Use this
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasErrors))]
+    [NotifyPropertyChangedFor(nameof(ErrorMessage))]
     private bool _workspaceHasErrors;
 
     [ObservableProperty]
@@ -129,10 +148,10 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            // TODO: Better error handling
             GameAssetsHaveErrors = true;
             GameAssets?.Dispose();
             GameAssets = null;
+            Program.LogDebug("Encountered an error while loading game assets!");
             Program.LogDebug(e.ToString());
         }
     }
@@ -155,8 +174,8 @@ public partial class MainWindowViewModel : ObservableObject
         }
         catch (Exception e)
         {
-            // TODO: Better error handling
             WorkspaceHasErrors = true;
+            Program.LogDebug("Encountered an error while preparing workspace!");
             Program.LogDebug(e.ToString());
         }
     }

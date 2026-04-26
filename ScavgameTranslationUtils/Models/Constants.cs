@@ -11,15 +11,15 @@ namespace ScavgameTranslationUtils.Models;
 
 public static class Constants
 {
+    public static string UpperFirst(string part)
+    {
+        return part.Length >= 1
+            ? char.ToUpper(part[0]) + part[1..]
+            : part;
+    }
+
     public static (string[] DisplayParts, string[] Parts) SplitToDisplayAndParts(Workspace workspace, string path)
     {
-        static string UpperFirst(string part)
-        {
-            return part.Length >= 1
-                ? char.ToUpper(part[0]) + part[1..]
-                : part;
-        }
-
         var parts = path.Split(':');
         var displayParts = parts.ToArray();
 
@@ -122,7 +122,7 @@ public static class Constants
                 {
                     Source = image,
                     Width = image.Size.Width,
-                    Height = image.Size.Height
+                    Height = image.Size.Height,
                 })
             ];
         }
@@ -299,6 +299,7 @@ public static class Constants
     public static string GetTranslationNotes(Workspace workspace, string key)
     {
         // Custom notes
+        // TODO: Move to a JSON file
         var assembledNotes = key switch
         {
             "other:jsonthing" =>
@@ -308,20 +309,38 @@ public static class Constants
                 """,
             _ => "",
         };
-
-        if ((key.StartsWith("pdaNotes:") || key.StartsWith("notes:")) && key.EndsWith(":sprite"))
+        
+        if (key.StartsWith("notes:") && key.EndsWith(":sprite"))
         {
-            assembledNotes += "\n";
-            assembledNotes += "This should keep the same value from the English translation!";
+            assembledNotes += "\nThe sprite that is shown when viewing the note (if any).";
+            assembledNotes += "\nThe sprite will be rendered on the right if you have loaded the game assets.";
+            assembledNotes += "\nThis should keep the same value from the English translation!";
+        }
+
+        if (key.StartsWith("pdaNotes:") && key.EndsWith(":sprite"))
+        {
+            assembledNotes += "\nCurrently unused.";
+            assembledNotes += "\nThis should keep the same value from the English translation!";
+        }
+        
+        if (key.StartsWith("notes:") && key.EndsWith(":text"))
+        {
+            assembledNotes += "\nPay attention to which in-game character wrote this note!";
+            assembledNotes += "\nMilkies have good writing, with proper grammar and punctuation.";
+            assembledNotes += "\nExperiments have mediocre writing, with missing punctuation and capitals.";
+            assembledNotes += "\nDunes have bad writing, with grammar issues, and refer to themselves in third person.";
         }
 
         if (key.StartsWith("notes:") && key.EndsWith(":font"))
         {
-            assembledNotes += "\n";
-            assembledNotes += "Fonts represent the character who wrote the note.";
-            assembledNotes += "This should keep the same value from the English translation!";
+            assembledNotes += "\nFonts represent the character who wrote the note.";
+            assembledNotes += "\nCurrently, the valid options are 'experiment', 'milky', and 'dune'.";
+            assembledNotes += "\nThis should keep the same value from the English translation!";
         }
 
-        return assembledNotes;
+        if (assembledNotes == "")
+            return "<None>";
+
+        return assembledNotes.Trim();
     }
 }

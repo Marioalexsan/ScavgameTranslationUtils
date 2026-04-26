@@ -8,106 +8,105 @@
         x:DataType="vm:TranslationWindowViewModel"
         Closing="WindowClosing"
         Icon="/Assets/icon2.png"
-        Title="Scavgame Translation Utils"
-        Name="ThisWindow">
+        Title="Scavgame Translation Utils" >
   <TabControl SelectionChanged="AutosaveChanges">
     <TabItem Header="Metadata">
       <StackPanel>
-        <Grid ColumnSpacing="5" RowSpacing="5" Margin="5">
+        <Grid ColumnSpacing="10" RowSpacing="5" Margin="5">
           <Grid.ColumnDefinitions>
-            <ColumnDefinition MinWidth="80" MaxWidth="300" />
-            <ColumnDefinition MinWidth="80" MaxWidth="300" />
+            <ColumnDefinition Width="150" />
+            <ColumnDefinition MinWidth="80" MaxWidth="600" />
           </Grid.ColumnDefinitions>
           <Grid.RowDefinitions>
-            <RowDefinition MinHeight="80" MaxHeight="300" />
-            <RowDefinition MinHeight="80" MaxHeight="300" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="40" />
+            <RowDefinition MinHeight="80" MaxHeight="150" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
+            <RowDefinition Height="40" />
           </Grid.RowDefinitions>
           <TextBlock Grid.Row="0" Grid.Column="0"
-                     Text="Name" />
-          <TextBox Grid.Row="0" Grid.Column="1"
-                   Margin="20, 0, 20, 0"
+                     TextWrapping="Wrap"
+                     Text="Translation progress" />
+          <TextBlock Grid.Row="0" Grid.Column="1"
+                     TextWrapping="Wrap"
+                     Text="{Binding TranslationProgress, FallbackValue=0%, TargetNullValue=0%}" />
+          <TextBlock Grid.Row="1" Grid.Column="0"
+                     TextWrapping="Wrap"
+                     Text="Translation name" />
+          <TextBox Grid.Row="1" Grid.Column="1"
                    TextWrapping="Wrap"
                    Text="{Binding CurrentName}"
                    LostFocus="AutosaveChanges" />
-          <TextBlock Grid.Row="1" Grid.Column="0"
-                     Text="Description" />
-          <ScrollViewer Grid.Row="1" Grid.Column="1"
-                        MaxHeight="300"
+          <TextBlock Grid.Row="2" Grid.Column="0"
+                     TextWrapping="Wrap"
+                     Text="Translation description" />
+          <ScrollViewer Grid.Row="2" Grid.Column="1"
+                        MaxHeight="150"
                         VerticalScrollBarVisibility="Visible">
             <TextBox TextWrapping="Wrap"
-                     Margin="20, 0, 20, 0"
                      AcceptsReturn="True"
                      Text="{Binding CurrentDescription}"
                      LostFocus="AutosaveChanges" />
           </ScrollViewer>
-        </Grid>
-        <Grid ColumnSpacing="5" RowSpacing="5" Margin="5">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition MinWidth="40" Width="Auto" MaxWidth="300" />
-            <ColumnDefinition MinWidth="40" Width="Auto" MaxWidth="300" />
-          </Grid.ColumnDefinitions>
-          <Grid.RowDefinitions>
-            <RowDefinition MinHeight="80" />
-            <RowDefinition MinHeight="80" />
-          </Grid.RowDefinitions>
-          <TextBlock Grid.Row="0" Grid.Column="0"
-                     Text="Indent Size" />
-          <ComboBox Grid.Row="0" Grid.Column="1"
+          <TextBlock Grid.Row="3" Grid.Column="0"
+                     Text="Indent size" />
+          <ComboBox Grid.Row="3" Grid.Column="1"
                     ItemsSource="{Binding AllowedIndents}"
                     SelectedItem="{Binding IndentSize}"
                     SelectionChanged="AutosaveChanges" />
-          <TextBlock Grid.Row="1" Grid.Column="0"
-                     Text="Translation progress:" />
-          <TextBlock Grid.Row="1" Grid.Column="1"
-                     Text="{Binding TranslationProgress}" />
+          <TextBlock Grid.Row="4" Grid.Column="0"
+                     TextWrapping="Wrap"
+                     Text="Save changes automatically" />
+          <CheckBox Grid.Row="4" Grid.Column="1"
+                    IsChecked="{Binding AutosaveEnabled}" />
+          <TextBlock Grid.Row="5" Grid.Column="0"
+                     TextWrapping="Wrap"
+                     Text="Sort keys in EN.json order" />
+          <CheckBox Grid.Row="5" Grid.Column="1"
+                    IsChecked="{Binding SortKeys}" />
         </Grid>
-        <StackPanel Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Margin="20" Spacing="10">
           <Button Click="SaveChangesManual"
                   Content="Save Changes" />
-          <CheckBox IsChecked="{Binding #ThisWindow.AutosaveEnabled}"
-                    Content="Enable autosaving"
-                    Margin="20, 0, 0, 0" />
-          <CheckBox IsChecked="{Binding SortKeys}"
-                    Content="Sort keys before saving"
-                    Margin="20, 0, 0, 0" />
+          <Button Click="CloseWindow"
+                  Content="Save Changes and Close" />
+          <Button Click="CloseWindowWithoutSaving"
+                  Content="Close Without Saving" />
         </StackPanel>
-        <Button Click="CloseWindow"
-                Content="Save Changes and Close" />
-        <Button Click="CloseWindowWithoutSaving"
-                Content="Close Without Saving" />
       </StackPanel>
     </TabItem>
     <TabItem Header="Translation">
-      <Grid>
+      <Grid ColumnSpacing="5" Margin="5">
         <Grid.RowDefinitions>
-          <RowDefinition Height="*"/>
+          <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-          <ColumnDefinition MinWidth="150" Width="*"/>
-          <ColumnDefinition Width="14"/>
-          <ColumnDefinition MinWidth="300" Width="4*"/>
+          <ColumnDefinition MinWidth="150" Width="*" />
+          <ColumnDefinition Width="14" />
+          <ColumnDefinition MinWidth="300" Width="4*" />
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="0" Grid.Column="0" 
-              ColumnDefinitions="*" 
+        <Grid Grid.Row="0" Grid.Column="0" RowSpacing="4"
+              ColumnDefinitions="*"
               RowDefinitions="Auto, Auto, Auto, Auto *">
-          <Button Grid.Row="0" Grid.Column="0" 
-                  Command="{Binding ClearSearchCommand}" 
+          <Button Grid.Row="0" Grid.Column="0"
+                  Command="{Binding ClearSearchCommand}"
                   Content="Clear search" />
-          <TextBox Grid.Row="1" Grid.Column="0" 
-                   HorizontalAlignment="Stretch" 
+          <TextBox Grid.Row="1" Grid.Column="0"
+                   HorizontalAlignment="Stretch"
                    Text="{Binding KeySearchText, Delay=500}"
                    PlaceholderText="Search for key..." />
-          <TextBox Grid.Row="2" Grid.Column="0" 
-                   HorizontalAlignment="Stretch" 
+          <TextBox Grid.Row="2" Grid.Column="0"
+                   HorizontalAlignment="Stretch"
                    Text="{Binding OriginalSearchText, Delay=500}"
                    PlaceholderText="Search text in EN.json..." />
-          <TextBox Grid.Row="3" Grid.Column="0" 
-                   HorizontalAlignment="Stretch" 
+          <TextBox Grid.Row="3" Grid.Column="0"
+                   HorizontalAlignment="Stretch"
                    Text="{Binding TranslationSearchText, Delay=500}"
                    PlaceholderText="Search text in locale..." />
-          <ListBox Grid.Row="4" Grid.Column="0" 
+          <ListBox Grid.Row="4" Grid.Column="0"
                    IsVisible="{Binding ShouldDoSearch}"
-                   Margin="5" 
+                   Margin="5"
                    ItemsSource="{Binding SearchMatchingKeys}" SelectedItem="{Binding SelectedSearchListItem}">
             <ListBox.ItemTemplate>
               <DataTemplate>
@@ -115,9 +114,9 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <TreeView Grid.Row="4" Grid.Column="0" 
+          <TreeView Grid.Row="4" Grid.Column="0"
                     IsVisible="{Binding !ShouldDoSearch}"
-                    ItemsSource="{Binding NavData.TreeView}" 
+                    ItemsSource="{Binding NavData.TreeView}"
                     SelectedItem="{Binding SelectedTreeViewItem}">
             <TreeView.ItemTemplate>
               <TreeDataTemplate ItemsSource="{Binding SubNodes}">
@@ -129,16 +128,16 @@
         <GridSplitter Grid.Row="0" Grid.Column="1"
                       Background="LightGray"
                       Width="2"
-                      Margin="6"/>
-        <ScrollViewer Grid.Row="0" Grid.Column="2" 
+                      Margin="6" />
+        <ScrollViewer Grid.Row="0" Grid.Column="2"
                       VerticalScrollBarVisibility="Visible">
-          <StackPanel Orientation="Vertical" 
+          <StackPanel Orientation="Vertical"
                       Margin="0,0,40,0">
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="Key" 
-                         Margin="5" />
-              <ComboBox Name="MainKeysComboBox"
-                        Margin="5"
+            <StackPanel Orientation="Horizontal" Spacing="5" Margin="5">
+              <TextBlock VerticalAlignment="Center"
+                         Text="Key" />
+              <ComboBox VerticalAlignment="Center"
+                        Name="MainKeysComboBox"
                         MinWidth="400"
                         SelectedIndex="{Binding CurrentKeyIndex}"
                         ItemsSource="{Binding NavData.ListView}">
@@ -148,9 +147,13 @@
                   </DataTemplate>
                 </ComboBox.ItemTemplate>
               </ComboBox>
-              <TextBlock Text="Sort order" Margin="5" />
-              <ComboBox ItemsSource="{Binding DisplayKeySortOptions}"
+              <TextBlock VerticalAlignment="Center"
+                         Text="Key view order" />
+              <ComboBox VerticalAlignment="Center"
+                        ItemsSource="{Binding DisplayKeySortOptions}"
                         SelectedItem="{Binding SelectedDisplayKeySorting}" />
+              <TextBlock VerticalAlignment="Center"
+                         Text="{Binding PaginationText, FallbackValue='Key 0 / Total 0', TargetNullValue='Key 0 / Total 0'}" />
             </StackPanel>
             <Grid HorizontalAlignment="Left">
               <Grid.RowDefinitions>
@@ -158,6 +161,7 @@
                 <RowDefinition Height="*" />
               </Grid.RowDefinitions>
               <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
@@ -172,10 +176,6 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding NextMainKeyCommand}" />
-              <TextBlock Grid.Row="0" Grid.Column="2"
-                         HorizontalAlignment="Center"
-                         VerticalAlignment="Center"
-                         Text="{Binding PaginationText, FallbackValue='Key 0 / Total 0', TargetNullValue='Key 0 / Total 0'}" />
               <Button Grid.Row="1" Grid.Column="0"
                       Content="Previous category"
                       HorizontalAlignment="Stretch"
@@ -186,13 +186,22 @@
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding NextCategoryCommand}" />
+              <Button Grid.Row="0" Grid.Column="2"
+                      Content="First untranslated"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding FirstUntranslatedKeyCommand}" />
               <Button Grid.Row="1" Grid.Column="2"
                       Content="Next untranslated"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding NextUntranslatedKeyCommand}" />
+              <CheckBox Grid.Row="0" Grid.Column="3" 
+                        Content="Render in-game text to the right (colors, etc.)"
+                        IsChecked="{Binding RenderText}"
+                        Margin="10, 0, 0, 0"/>
             </Grid>
-            <Grid>
+            <Grid ColumnSpacing="10" RowSpacing="10" Margin="10">
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" MaxWidth="140" />
                 <ColumnDefinition Width="*" MaxWidth="700" />
@@ -204,62 +213,57 @@
                 <RowDefinition MinHeight="60" Height="Auto" MaxHeight="350" />
               </Grid.RowDefinitions>
               <TextBlock Grid.Row="0" Grid.Column="0"
-                         Text="English text"
-                         Margin="5" />
-              <ScrollViewer Grid.Row="0" Grid.Column="1"
+                         Text="English"
+                         TextWrapping="Wrap" />
+              <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="{Binding NonDisplayBoxesColumnSpan}"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <SelectableTextBlock Text="{Binding CurrentKeyEnglish}"
-                                     FontFeatures="-liga"
                                      FontSize="16"
                                      TextWrapping="Wrap"
-                                     Margin="10" />
+                                     Margin="0, 0, 10, 0" />
               </ScrollViewer>
-              <ScrollViewer Grid.Row="0" Grid.Column="2"
+              <ScrollViewer Grid.Row="0" Grid.Column="2" IsVisible="{Binding RenderText}"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBlock FontFamily="{StaticResource Unifont}"
-                           FontFeatures="-liga"
                            FontSize="16"
                            Inlines="{Binding CurrentKeyEnglishDisplay}"
                            TextWrapping="Wrap"
-                           Margin="10" />
+                           Margin="0, 0, 10, 0" />
               </ScrollViewer>
-              <ScrollViewer Grid.Row="1" Grid.Column="0"
-                            VerticalScrollBarVisibility="Visible">
-                <TextBlock Text="Translation text"
-                           Margin="10" />
-              </ScrollViewer>
-              <ScrollViewer Grid.Row="1" Grid.Column="1"
+              <TextBlock Grid.Row="1" Grid.Column="0"
+                         Text="Translated"
+                         TextWrapping="Wrap" />
+              <ScrollViewer Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="{Binding NonDisplayBoxesColumnSpan}"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBox Text="{Binding CurrentKeyTranslation}"
-                         FontFeatures="-liga"
                          FontSize="16"
                          LostFocus="AutosaveChanges"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
-                         Margin="10" />
+                         Margin="0, 0, 10, 0" />
               </ScrollViewer>
-              <ScrollViewer Grid.Row="1" Grid.Column="2"
+              <ScrollViewer Grid.Row="1" Grid.Column="2" IsVisible="{Binding RenderText}"
                             MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
                 <TextBlock FontFamily="{StaticResource Unifont}"
-                           FontFeatures="-liga"
                            FontSize="16"
                            Inlines="{Binding CurrentKeyTranslationDisplay}"
                            TextWrapping="Wrap"
-                           Margin="10" />
+                           Margin="0, 0, 10, 0" />
               </ScrollViewer>
-              <ScrollViewer Grid.Row="2" Grid.Column="0"
+              <TextBlock Grid.Row="2" Grid.Column="0"
+                         Text="Notes"
+                         TextWrapping="Wrap" />
+              <ScrollViewer Grid.Row="2" Grid.Column="1"
+                            MaxHeight="350"
                             VerticalScrollBarVisibility="Visible">
-                <TextBlock Text="Translation notes"
-                           Margin="10" />
+                <TextBlock Text="{Binding CurrentKeyNotes}"
+                           TextWrapping="Wrap"
+                           Margin="0, 0, 10, 0" />
               </ScrollViewer>
-              <TextBlock Grid.Row="2" Grid.Column="1"
-                         Text="{Binding CurrentKeyNotes}"
-                         TextWrapping="Wrap"
-                         Margin="10" />
             </Grid>
           </StackPanel>
         </ScrollViewer>

@@ -2,10 +2,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="ScavgameTranslationUtils.App"
              RequestedThemeVariant="Default">
-    <Application.Styles>
-        <FluentTheme />
-    </Application.Styles>
-    <Application.Resources>
-        <FontFamily x:Key="Unifont">avares://ScavgameTranslationUtils/Assets/unifont-17.0.04.otf#Unifont</FontFamily>
-    </Application.Resources>
+  <Application.Resources>
+    <FontFamily x:Key="Unifont">avares://ScavgameTranslationUtils/Assets/unifont-17.0.04.otf#Unifont</FontFamily>
+  </Application.Resources>
+  <Application.Styles>
+    <FluentTheme />
+    <Style Selector=":is(Button)">
+      <Setter Property="FontFamily" Value="{StaticResource Unifont}" />
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontFeatures" Value="-liga,-calt" />
+    </Style>
+    <Style Selector=":is(TextBlock)">
+      <Setter Property="FontFamily" Value="{StaticResource Unifont}" />
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontFeatures" Value="-liga,-calt" />
+    </Style>
+    <Style Selector=":is(TextBox)">
+      <Setter Property="FontFamily" Value="{StaticResource Unifont}" />
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontFeatures" Value="-liga,-calt" />
+    </Style>
+  </Application.Styles>
 </Application>

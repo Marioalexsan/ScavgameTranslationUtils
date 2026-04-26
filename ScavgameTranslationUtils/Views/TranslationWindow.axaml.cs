@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -20,11 +21,34 @@ public partial class TranslationWindow : Window
     private Task _currentSaveTask = Task.CompletedTask;
     private bool _shouldSaveOnClose = true;
 
-    public bool AutosaveEnabled { get; set; } = true;
+    private DispatcherTimer _periodicBackupTimer;
 
     public TranslationWindow()
     {
         InitializeComponent();
+        Program.LogDebug("Starting backup timer.");
+        _periodicBackupTimer = new DispatcherTimer(TimeSpan.FromMinutes(5), DispatcherPriority.Background, OnPeriodicBackupTimerTick);
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        Program.LogDebug("Stopping backup timer.");
+        _periodicBackupTimer.Stop();
+    }
+
+    private void OnPeriodicBackupTimerTick(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            if (ViewModel == null)
+                return;
+
+            var workspace = ViewModel.Workspace;
+
+            await _currentSaveTask; // If there's anything pending, wait for it first
+            _currentSaveTask = Task.Run(() => workspace.SaveBackup(periodic: true));
+            await _currentSaveTask;
+        });
     }
 
     private async void SaveChangesManual(object? sender, RoutedEventArgs e)
@@ -34,7 +58,7 @@ public partial class TranslationWindow : Window
 
     private async void AutosaveChanges(object? sender, RoutedEventArgs e)
     {
-        if (!AutosaveEnabled)
+        if (ViewModel == null || !ViewModel.AutosaveEnabled)
             return;
         
         await SaveChanges();

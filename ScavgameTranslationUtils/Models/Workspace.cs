@@ -132,7 +132,7 @@ public class Workspace
         get => _translation.Name;
         set
         {
-            Program.LogDebug($"Setting translation name as {value}");
+            Program.LogDebug($"Setting translation name");
             _hasPendingChanges = true;
             _translation.Name = value;
         }
@@ -143,7 +143,7 @@ public class Workspace
         get => _translation.Description;
         set
         {
-            Program.LogDebug($"Setting translation description as {value}");
+            Program.LogDebug($"Setting translation description");
             _hasPendingChanges = true;
             _translation.Description = value;
         }
@@ -197,9 +197,14 @@ public class Workspace
         return time;
     }
 
-    public async Task SaveBackup()
+    public async Task SaveBackup(bool periodic = false)
     {
-        Directory.CreateDirectory(BackupsPath);
+        var backupsPathToUse = BackupsPath;
+
+        if (periodic)
+            backupsPathToUse = Path.Combine(backupsPathToUse, "periodic_backups");
+        
+        Directory.CreateDirectory(backupsPathToUse);
         
         var translationName = Path.GetFileNameWithoutExtension(TranslationPath);
         var translationDirectory = Path.GetDirectoryName(TranslationPath)!;
@@ -207,19 +212,20 @@ public class Workspace
         // Hashing is used to allow two translations with identical names to have different backups
         using SHA256 sHA = SHA256.Create();
         var pathHash = BitConverter.ToString(sHA.ComputeHash(Encoding.UTF32.GetBytes(translationDirectory))).Replace("-", "").Substring(0, 8);
-        var backupPath = Path.Combine(BackupsPath, $"{translationName}-{pathHash}-{GetSanitizedCurrentTime()}-backup.json");
+        var backupPath = Path.Combine(backupsPathToUse, $"{translationName}-{pathHash}-{GetSanitizedCurrentTime()}-backup.json");
         
-        Program.LogDebug($"Creating backup {backupPath}");
+        Program.LogDebug($"Creating {(periodic ? "periodic ": "" )}backup {backupPath}");
 
         await using (var translationStream = File.Open(backupPath, FileMode.Create, FileAccess.Write))
         {
             await JsonSerializer.SerializeAsync(translationStream, _translation, CreateContext(IndentSize).Localization);
         }
 
+        var maxBackups = 3;
         var backupsToDelete =
-            Directory.EnumerateFiles(BackupsPath, $"{translationName}-{pathHash}-*-backup.json")
+            Directory.EnumerateFiles(backupsPathToUse, $"{translationName}-{pathHash}-*-backup.json")
                 .OrderDescending()
-                .Skip(5);
+                .Skip(maxBackups);
 
         foreach (var backup in backupsToDelete)
         {
