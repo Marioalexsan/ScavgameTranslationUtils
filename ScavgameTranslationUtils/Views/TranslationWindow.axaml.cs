@@ -51,6 +51,15 @@ public partial class TranslationWindow : Window
         });
     }
 
+    private async void BackfllWithEnglishText(object? sender, RoutedEventArgs e)
+    {
+        if (ViewModel == null)
+            return;
+        
+        ViewModel.BackfillTranslation();
+        await SaveChanges(true);
+    }
+
     private async void SaveChangesManual(object? sender, RoutedEventArgs e)
     {
         await SaveChanges(true);

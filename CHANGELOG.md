@@ -7,6 +7,32 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+### Added
+- The English locale for versions v5.1, v6.0 and v6.1 of the game are now fetched and cached on app launch
+- The English locales for v5.1, v6.0, v6.1, and the currently opened EN.json file are used to check for untranslated
+  English text in the translated locale
+- Translation notes containing literary references for the following keys:
+  - `moodles:bleeding4dsc`
+  - `moodles:thirst4dsc`
+  - `moodles:sepsis3dsc`
+  - `moodles:irradiated4dsc`
+- Tooltips for some UI elements
+- Option to backfill the current locale with English text where translations are missing. It works like this:
+  - Keys that do not have a translation are set to the English text from EN.json
+  - Keys that match English text in v5.1, v6.0, or v6.1 game versions are updated to match the current EN.json file
+  - Other keys in the translations are left as-is
+  - Note: this is mainly meant to be used for maintainer work in the scavgame-locale repository
+
+### Changed
+- "First untranslated" has been modified to be "Previous untranslated"
+- The "Previous untranslated" and "Next untranslated" buttons are now greyed out if there are no such keys present
+
+### Removed
+- The controls for switching between key categories were removed in favor of using the tree view
+
+### Fixed
+- Loading translations with trailing commas would fail
+
 ## [2026.04.26]
 
 ### Added

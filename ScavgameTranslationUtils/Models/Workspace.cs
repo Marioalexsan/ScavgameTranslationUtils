@@ -4,9 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace ScavgameTranslationUtils.Models;
@@ -15,15 +13,6 @@ public class Workspace
 {
     public static readonly string BackupsPath = Path.Combine(Program.AppDataPath, "backups");
 
-    private static AppJsonContext CreateContext(int indentSize) => new AppJsonContext(new JsonSerializerOptions()
-    {
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        WriteIndented = true,
-        IndentCharacter = ' ',
-        IndentSize = indentSize,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-    });
-    
     private Localization _original;
     private Localization _translation;
 
@@ -82,7 +71,7 @@ public class Workspace
     public static async Task<Workspace> CreateAsync(string originalPath, string translationPath)
     {
         Localization original, translation;
-        var context = CreateContext(4);
+        var context = AppJsonContext.CreateContext(4);
         
         await using (var originalStream = File.OpenRead(originalPath))
         {
@@ -179,7 +168,7 @@ public class Workspace
             ResortKeys();
         
         await using var translationStream = File.Open(TranslationPath, FileMode.Create, FileAccess.Write);
-        await JsonSerializer.SerializeAsync(translationStream, _translation, CreateContext(IndentSize).Localization);
+        await JsonSerializer.SerializeAsync(translationStream, _translation, AppJsonContext.CreateContext(IndentSize).Localization);
 
         _hasPendingChanges = false;
         Program.LogDebug("Translation saved!");
@@ -218,7 +207,7 @@ public class Workspace
 
         await using (var translationStream = File.Open(backupPath, FileMode.Create, FileAccess.Write))
         {
-            await JsonSerializer.SerializeAsync(translationStream, _translation, CreateContext(IndentSize).Localization);
+            await JsonSerializer.SerializeAsync(translationStream, _translation, AppJsonContext.CreateContext(IndentSize).Localization);
         }
 
         var maxBackups = 3;
@@ -234,6 +223,32 @@ public class Workspace
         }
     }
 
+    public void BackfillTranslation()
+    {
+        var backfilledTranslated = new Localization()
+        {
+            Name = _translation.Name,
+            Description = _translation.Description
+        };
+
+        foreach (var path in _original.GetPaths())
+        {
+            var originalText = _original.GetTextByPath(path);
+            var translatedText = _translation.GetTextByPath(path);
+
+            if (originalText != null && (translatedText == null || Constants.IsLikelyUntranslatedEnglish(path, originalText, translatedText)))
+            {
+                backfilledTranslated.SetTextByPath(path, originalText);
+            }
+            else if (translatedText != null)
+            {
+                backfilledTranslated.SetTextByPath(path, translatedText);
+            }
+        }
+
+        _translation = backfilledTranslated;
+    }
+
     private static Localization CreateNewTranslation(Localization original)
     {
         var translation = new Localization()
@@ -245,11 +260,7 @@ public class Workspace
         // Some keys should be kept intact between locales, such as fonts and sprites
         foreach (var key in original.GetPaths())
         {
-            bool shouldCopy =
-                key.StartsWith("notes:") && key.EndsWith(":font")
-                || (key.StartsWith("notes:") || key.StartsWith("pdaNotes:")) && key.EndsWith(":sprite");
-            
-            if (shouldCopy)
+            if (Constants.ShouldRemainIdenticalInTranslation(key))
             {
                 var value = original.GetTextByPath(key);
                 

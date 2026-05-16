@@ -1,6 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
@@ -262,7 +269,7 @@ public static class Constants
                     foreground = Brushes.White;
                 else
                     shouldPrintRaw = true;
-                
+
                 if (shouldPrintRaw)
                 {
                     inlines.Add(
@@ -307,9 +314,29 @@ public static class Constants
                 As mentioned by the developer, this key is not necessary.
                 Feel free to skip it.
                 """,
+            "moodles:bleeding4dsc" =>
+                """
+                This may be a reference to "Memento mori" (latin for "remember [that you have] to die").
+                https://en.wikipedia.org/wiki/Memento_mori.
+                """,
+            "moodles:thirst4dsc" =>
+                """
+                This may be a reference to Ecclesiastes 12:7 in the Bible.
+                https://en.wikipedia.org/wiki/Ecclesiastes_12#Verse_7
+                """,
+            "moodles:sepsis3dsc" =>
+                """
+                This may be a reference to the poem "Because I could not stop for Death" by Emily Dickinson.
+                https://en.wikipedia.org/wiki/Because_I_could_not_stop_for_Death
+                """,
+            "moodles:irradiated4dsc" =>
+                """
+                This may be a reference to the poem "Do not go gentle into that good night" by Dylan Thomas.
+                https://en.wikipedia.org/wiki/Do_not_go_gentle_into_that_good_night
+                """,
             _ => "",
         };
-        
+
         if (key.StartsWith("notes:") && key.EndsWith(":sprite"))
         {
             assembledNotes += "\nThe sprite that is shown when viewing the note (if any).";
@@ -322,7 +349,7 @@ public static class Constants
             assembledNotes += "\nCurrently unused.";
             assembledNotes += "\nThis should keep the same value from the English translation!";
         }
-        
+
         if (key.StartsWith("notes:") && key.EndsWith(":text"))
         {
             assembledNotes += "\nPay attention to which in-game character wrote this note!";
@@ -342,5 +369,106 @@ public static class Constants
             return "<None>";
 
         return assembledNotes.Trim();
+    }
+
+    public static bool IsLikelyUntranslatedEnglish(string key, string? original, string? translation)
+    {
+        if (translation == null || original == null)
+            return false;
+
+        if (original != translation && KnownEnglishVersions.Values.All(x => x.GetTextByPath(key) != translation))
+            return false;
+
+        if (original.All(x => char.IsPunctuation(x) || char.IsWhiteSpace(x)))
+            return false; // Likely remains the same in translations
+
+        return true;
+    }
+
+    /// <summary>
+    /// Returns true if a key should normally remain identical in the translation.
+    /// </summary>
+    public static bool ShouldRemainIdenticalInTranslation(string key)
+    {
+        // Fonts and sprites normally don't require "translation"
+        return
+            key.StartsWith("notes:") && key.EndsWith(":font")
+            || (key.StartsWith("notes:") || key.StartsWith("pdaNotes:")) && key.EndsWith(":sprite");
+    }
+
+    private static readonly string EnglishLocaleVersions = Path.Combine(Program.AppDataPath, "en_locales");
+    
+    public static Dictionary<string, Localization> KnownEnglishVersions { get; } = [];
+
+    public static async Task<Dictionary<string, Localization>> FetchEnglishTranslationsAsync()
+    {
+        // Integrity checks, just in case the files are swapped with something malicious
+        var localePaths = new Dictionary<string, (string Url, string Hash)>()
+        {
+            ["v5.1"] = (
+                "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v5.1/EN.json",
+                "927B81F087664C8DFF06B1EF5011E9EB8B29581C8B489B5B26E29FBAE86E920B"
+            ),
+            ["v6.0"] = (
+                "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v6.0/EN.json",
+                "754728144B867B5348E94F4124AF3F9491C6527E03032660E901A7F5896521CA"
+            ),
+            ["v6.1"] = (
+                "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v6.1/EN.json",
+                "3FEC04F51139DF1B9312D8B10AE508E40DF68B2D00CB2BBC96A38DC7A0D62980"
+            ),
+        };
+
+        var fetchedTranslations = new Dictionary<string, Localization>();
+
+        // ReSharper disable once ShortLivedHttpClient - not used frequently
+        using var httpClient = new HttpClient();
+        var serializer = AppJsonContext.CreateContext(4);
+
+        Directory.CreateDirectory(EnglishLocaleVersions);
+
+        foreach (var (version, localeData) in localePaths)
+        {
+            var (url, hash) = localeData;
+            try
+            {
+                var desiredPath = Path.Combine(EnglishLocaleVersions, $"EN-{version}.json");
+
+                if (File.Exists(desiredPath))
+                {
+                    var data = await File.ReadAllTextAsync(desiredPath);
+                    fetchedTranslations[version] =
+                        JsonSerializer.Deserialize<Localization>(data, serializer.Localization)
+                        ?? throw new InvalidOperationException($"Deserializer returned null for localization at {desiredPath}");
+                    Program.LogDebug($"Read cached translation from {desiredPath}");
+                    continue;
+                }
+
+                var response = await httpClient.GetAsync(url);
+                var body = await response.Content.ReadAsStringAsync();
+
+                using var sha256 = SHA256.Create();
+                var responseHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(body));
+                var expectedHash = Convert.FromHexString(hash);
+                Program.LogDebug($"Got hash {Convert.ToHexString(responseHash)} for {version}");
+
+                if (!responseHash.SequenceEqual(expectedHash))
+                    throw new InvalidOperationException($"Hash integrity check failed for {version}");
+                
+                fetchedTranslations[version] =
+                    JsonSerializer.Deserialize<Localization>(body, serializer.Localization)
+                    ?? throw new InvalidOperationException($"Deserializer returned null for localization at {desiredPath}");
+                
+                File.WriteAllText(desiredPath, body);
+                Program.LogDebug($"Fetched and cached translation for {version} under {desiredPath}.");
+            }
+            catch (Exception e)
+            {
+                Program.LogDebug("Failed to retrieve translation files from the main repository.");
+                Program.LogDebug($"Exception: {e}");
+            }
+        }
+
+        return fetchedTranslations;
     }
 }

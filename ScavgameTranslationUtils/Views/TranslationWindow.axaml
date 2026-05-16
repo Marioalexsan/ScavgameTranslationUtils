@@ -30,7 +30,8 @@
                      Text="Translation progress" />
           <TextBlock Grid.Row="0" Grid.Column="1"
                      TextWrapping="Wrap"
-                     Text="{Binding TranslationProgress, FallbackValue=0%, TargetNullValue=0%}" />
+                     Text="{Binding TranslationProgress, FallbackValue=0%, TargetNullValue=0%}" 
+                     ToolTip.Tip="Untranslated keys are marked with (*). Translated keys that are identical to their English counterparts are marked with (=); these may indicate missing translations."/>
           <TextBlock Grid.Row="1" Grid.Column="0"
                      TextWrapping="Wrap"
                      Text="Translation name" />
@@ -66,6 +67,10 @@
           <CheckBox Grid.Row="5" Grid.Column="1"
                     IsChecked="{Binding SortKeys}" />
         </Grid>
+        <StackPanel Orientation="Horizontal" Margin="20" Spacing="10">
+          <Button Click="BackfllWithEnglishText"
+                  Content="Backfill with English Text and Save" />
+        </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="20" Spacing="10">
           <Button Click="SaveChangesManual"
                   Content="Save Changes" />
@@ -164,39 +169,28 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Button Grid.Row="0" Grid.Column="0"
                       Content="Previous"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding PreviousMainKeyCommand}" />
-              <Button Grid.Row="0" Grid.Column="1"
+              <Button Grid.Row="1" Grid.Column="0"
                       Content="Next"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding NextMainKeyCommand}" />
-              <Button Grid.Row="1" Grid.Column="0"
-                      Content="Previous category"
+              <Button Grid.Row="0" Grid.Column="1"
+                      Content="Previous untranslated"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Command="{Binding PreviousCategoryCommand}" />
+                      Command="{Binding PreviousUntranslatedKeyCommand}" />
               <Button Grid.Row="1" Grid.Column="1"
-                      Content="Next category"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Command="{Binding NextCategoryCommand}" />
-              <Button Grid.Row="0" Grid.Column="2"
-                      Content="First untranslated"
-                      HorizontalAlignment="Stretch"
-                      VerticalAlignment="Stretch"
-                      Command="{Binding FirstUntranslatedKeyCommand}" />
-              <Button Grid.Row="1" Grid.Column="2"
                       Content="Next untranslated"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       Command="{Binding NextUntranslatedKeyCommand}" />
-              <CheckBox Grid.Row="0" Grid.Column="3" 
+              <CheckBox Grid.Row="0" Grid.Column="2" 
                         Content="Render in-game text to the right (colors, etc.)"
                         IsChecked="{Binding RenderText}"
                         Margin="10, 0, 0, 0"/>

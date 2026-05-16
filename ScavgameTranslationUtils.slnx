@@ -4,5 +4,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Project Path="ScavgameTranslationUtils.UnitTests/ScavgameTranslationUtils.UnitTests.csproj" />
   <Project Path="ScavgameTranslationUtils/ScavgameTranslationUtils.csproj" />
 </Solution>

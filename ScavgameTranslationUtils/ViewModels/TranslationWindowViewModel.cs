@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -16,13 +14,18 @@ public partial class TranslationWindowViewModel : ObservableObject
     public partial class DisplayNode(DisplayNode? parent) : ObservableObject
     {
         public DisplayNode? Parent { get; } = parent;
-        
-        public string PathPartView => AllItemsTranslated ? PathPartDisplay : $"{PathPartDisplay} (*)";
-        public string FullPathView => AllItemsTranslated ? FullPathDisplay : $"{FullPathDisplay} (*)";
-        
+
+        public string PathPartView => AllItemsTranslated
+            ? (TranslationIdentical ? $"{PathPartDisplay} (=)" : PathPartDisplay)
+            : $"{PathPartDisplay} (*)";
+
+        public string FullPathView => AllItemsTranslated
+            ? (TranslationIdentical ? $"{FullPathDisplay} (=)" : FullPathDisplay)
+            : $"{FullPathDisplay} (*)";
+
         public required string PathPart { get; init; }
         public required string FullPath { get; init; }
-        
+
         public required string PathPartDisplay { get; init; }
         public required string FullPathDisplay { get; init; }
 
@@ -35,15 +38,25 @@ public partial class TranslationWindowViewModel : ObservableObject
         [ObservableProperty]
         private bool _allItemsTranslated;
 
+        [NotifyPropertyChangedFor(nameof(PathPartView))]
+        [NotifyPropertyChangedFor(nameof(FullPathView))]
+        [ObservableProperty]
+        private bool _translationIdentical;
+
         // This is a shallow check
         public void UpdateTranslationStatus(Workspace workspace)
         {
+            TranslationIdentical = false;
             if (IsTerminalNode)
             {
                 var translatedText = workspace.GetText(FullPath);
-                AllItemsTranslated = 
+                var originalText = workspace.GetOriginalText(FullPath);
+                AllItemsTranslated =
                     !string.IsNullOrWhiteSpace(translatedText)
-                    || translatedText == "" && workspace.GetOriginalText(FullPath) == "";
+                    || translatedText == "" && originalText == "";
+                TranslationIdentical =
+                    Constants.IsLikelyUntranslatedEnglish(FullPath, originalText, translatedText)
+                    && !Constants.ShouldRemainIdenticalInTranslation(FullPath);
             }
             else
             {
@@ -51,17 +64,17 @@ public partial class TranslationWindowViewModel : ObservableObject
 
                 foreach (var node in SubNodes)
                     allTranslated = allTranslated && node.AllItemsTranslated;
-                
+
 
                 AllItemsTranslated = allTranslated;
             }
-            
+
             Parent?.UpdateTranslationStatus(workspace);
         }
 
         public override string ToString() => $"FullPath={FullPath}, IsTranslated={AllItemsTranslated}";
     }
-    
+
     public class NavigationData
     {
         public static NavigationData Create(Workspace workspace, bool sortInnerKeysAlphabetically)
@@ -94,7 +107,7 @@ public partial class TranslationWindowViewModel : ObservableObject
                     parentNode = targetNode;
                 }
             }
-            
+
             if (sortInnerKeysAlphabetically)
             {
                 // TODO: Bad string comparison here
@@ -111,14 +124,14 @@ public partial class TranslationWindowViewModel : ObservableObject
                 {
                     var sortedNodes = node.SubNodes.OrderBy(x => x.PathPart).ToArray();
                     node.SubNodes.Clear();
-                    
+
                     foreach (var sortedNode in sortedNodes)
                         node.SubNodes.Add(sortedNode);
                 }
             }
 
             var listViewNodes = new ObservableCollection<DisplayNode>();
-            
+
             var stack = new Stack<DisplayNode>(treeViewNodes.Reverse());
 
             while (stack.Count > 0)
@@ -136,40 +149,29 @@ public partial class TranslationWindowViewModel : ObservableObject
                 }
             }
 
-            var categoryStarts = new List<(string Category, int Start)>();
-            
-            for (int i = 0; i < listViewNodes.Count; i++)
-            {
-                var category = GetKeyCategory(listViewNodes[i].FullPath);
-                if (categoryStarts.FindIndex(x => x.Category == category) == -1)
-                    categoryStarts.Add((category, i));
-            }
-
             return new NavigationData()
             {
-                CategoryStarts = categoryStarts,
                 TreeView = treeViewNodes,
                 ListView = listViewNodes,
             };
         }
-        
+
         public required ObservableCollection<DisplayNode> TreeView { get; init; }
         public required ObservableCollection<DisplayNode> ListView { get; init; }
-        public required List<(string Category, int Start)> CategoryStarts { get; init; }
     }
-    
+
     public TranslationWindowViewModel(GameAssets? gameAssets, Workspace workspace)
     {
         Workspace = workspace;
         GameAssets = gameAssets;
-        
+
         _englishJsonNavData = NavigationData.Create(workspace, false);
         _alphabeticNavData = NavigationData.Create(workspace, true);
         NavData = _englishJsonNavData;
-        
+
         // This length check is *in 99% of cases* not needed
         _currentKey = NavData.ListView.Count > 0 ? NavData.ListView[0].FullPath : "";
-        
+
         foreach (var node in NavData.ListView)
             node.UpdateTranslationStatus(workspace);
     }
@@ -180,10 +182,10 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     public GameAssets? GameAssets { get; }
     public Workspace Workspace { get; }
-    
+
     [ObservableProperty]
     public bool _autosaveEnabled = true;
-    
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NonDisplayBoxesColumnSpan))]
     public bool _renderText = true;
@@ -196,7 +198,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     partial void OnSelectedDisplayKeySortingChanged(string value)
     {
         var currentKey = CurrentKey;
-        
+
         switch (value)
         {
             case "Alphabetically":
@@ -206,14 +208,14 @@ public partial class TranslationWindowViewModel : ObservableObject
                 NavData = _englishJsonNavData;
                 break;
         }
-        
+
         foreach (var node in NavData.ListView)
             node.UpdateTranslationStatus(Workspace);
-        
+
         // Has to be done *after* setting the new item source!
         var updatedNode = NavData.ListView.FirstOrDefault(x => x.FullPath == currentKey);
         CurrentKeyIndex = updatedNode == null ? 0 : NavData.ListView.IndexOf(updatedNode);
-        
+
         // Let's also do this just in case
         ClearSearch();
     }
@@ -223,15 +225,15 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     private NavigationData _alphabeticNavData;
     private NavigationData _englishJsonNavData;
-    
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PaginationText))]
     [NotifyCanExecuteChangedFor(nameof(PreviousMainKeyCommand))]
     [NotifyCanExecuteChangedFor(nameof(NextMainKeyCommand))]
-    [NotifyCanExecuteChangedFor(nameof(PreviousCategoryCommand))]
-    [NotifyCanExecuteChangedFor(nameof(NextCategoryCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PreviousUntranslatedKeyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(NextUntranslatedKeyCommand))]
     private int _currentKeyIndex;
-    
+
     partial void OnCurrentKeyIndexChanged(int value)
     {
         bool isValidIndex = 0 <= value && value < NavData.ListView.Count;
@@ -241,7 +243,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private object? _selectedTreeViewItem;
-    
+
     partial void OnSelectedTreeViewItemChanged(object? value)
     {
         if (value is not DisplayNode node || !node.IsTerminalNode)
@@ -257,7 +259,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private object? _selectedSearchListItem;
-    
+
     partial void OnSelectedSearchListItemChanged(object? value)
     {
         if (value is not DisplayNode node || !node.IsTerminalNode)
@@ -275,17 +277,17 @@ public partial class TranslationWindowViewModel : ObservableObject
     private bool _shouldDoSearch;
 
     public ObservableCollection<DisplayNode> SearchMatchingKeys { get; } = [];
-    
+
     [ObservableProperty]
     public string _keySearchText = "";
-    
+
     partial void OnKeySearchTextChanged(string value) => UpdateSearch();
-    
+
     [ObservableProperty]
     public string _originalSearchText = "";
-    
+
     partial void OnOriginalSearchTextChanged(string value) => UpdateSearch();
-    
+
     [ObservableProperty]
     public string _translationSearchText = "";
 
@@ -298,12 +300,12 @@ public partial class TranslationWindowViewModel : ObservableObject
         bool shouldSearchByKey = KeySearchText.Length >= 1;
         bool shouldSearchByOriginal = OriginalSearchText.Length >= 1;
         bool shouldSearchByTranslation = TranslationSearchText.Length >= 1;
-        
+
         ShouldDoSearch = shouldSearchByKey || shouldSearchByOriginal || shouldSearchByTranslation;
 
         if (!ShouldDoSearch)
             return;
-        
+
         if (shouldSearchByKey)
         {
             foreach (var node in NavData.ListView)
@@ -311,7 +313,7 @@ public partial class TranslationWindowViewModel : ObservableObject
                 bool matches =
                     node.FullPath.Contains(KeySearchText, StringComparison.InvariantCultureIgnoreCase) ||
                     node.FullPathDisplay.Contains(KeySearchText, StringComparison.InvariantCultureIgnoreCase);
-                
+
                 if (matches)
                     SearchMatchingKeys.Add(node);
             }
@@ -346,6 +348,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     {
         get
         {
+            int globalIdentical = 0;
             int globalCounter = 0;
             int globalTotal = Workspace.Paths.Count;
             var categoryCounters = new Dictionary<string, int>()
@@ -359,23 +362,30 @@ public partial class TranslationWindowViewModel : ObservableObject
                 ["pdaNotes"] = 0,
             };
             var categoryTotals = new Dictionary<string, int>(categoryCounters);
-            
+
             foreach (var path in Workspace.Paths)
             {
-                bool translated = Workspace.GetText(path) != null;
-                
-                if (translated)
+                var originalText = Workspace.GetOriginalText(path);
+                var translatedText = Workspace.GetText(path);
+                bool isTranslated = translatedText != null;
+
+                if (isTranslated)
+                {
                     globalCounter++;
+
+                    if (Constants.IsLikelyUntranslatedEnglish(path, originalText, translatedText) && !Constants.ShouldRemainIdenticalInTranslation(path))
+                        globalIdentical++;
+                }
 
                 foreach (var category in categoryCounters)
                 {
                     if (path.StartsWith(category.Key))
                     {
                         categoryTotals[category.Key]++;
-                        
-                        if (translated)
+
+                        if (isTranslated)
                             categoryCounters[category.Key]++;
-                        
+
                         break;
                     }
                 }
@@ -383,6 +393,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
             // TODO: Kinda crappy
             var display = $"Global: {globalCounter} / {globalTotal} ({globalCounter * 100f / globalTotal:F2} %) ({globalTotal - globalCounter} left)\n";
+            display += $"Global without identical keys: {globalCounter - globalIdentical} / {globalTotal} ({(globalCounter - globalIdentical) * 100f / globalTotal:F2} %)\n";
 
             foreach (var category in categoryCounters)
             {
@@ -406,7 +417,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     public string CurrentKeyNotes => Constants.GetTranslationNotes(Workspace, CurrentKey);
 
     public string? CurrentKeyEnglish => Workspace.GetOriginalText(CurrentKey);
-    
+
     public string? CurrentKeyTranslation
     {
         get => Workspace.GetText(CurrentKey) ?? "";
@@ -417,7 +428,7 @@ public partial class TranslationWindowViewModel : ObservableObject
             {
                 Workspace.SetText(CurrentKey, value);
                 NavData.ListView[CurrentKeyIndex].UpdateTranslationStatus(Workspace);
-                
+
                 OnPropertyChanged(nameof(CurrentKeyTranslationDisplay));
                 OnPropertyChanged(nameof(TranslationProgress));
             }
@@ -431,14 +442,14 @@ public partial class TranslationWindowViewModel : ObservableObject
     {
         if (text == null)
             return [];
-        
+
         // TODO Parse properly
         if (key.EndsWith(":sprite"))
             return Constants.RenderSprite(GameAssets?.GetGameSprite(text));
-        
+
         return Constants.RenderText(GameAssets, Constants.ReplacePlaceholders(key, text));
     }
-    
+
     public string CurrentName
     {
         get => Workspace.Name;
@@ -464,22 +475,22 @@ public partial class TranslationWindowViewModel : ObservableObject
     public int IndentSize
     {
         get => Workspace.IndentSize;
-        set 
+        set
         {
             var oldValue = Workspace.IndentSize;
             if (SetProperty(ref oldValue, value))
-                Workspace.IndentSize = value;    
+                Workspace.IndentSize = value;
         }
     }
 
     public bool SortKeys
     {
         get => Workspace.SortKeys;
-        set 
+        set
         {
             var oldValue = Workspace.SortKeys;
             if (SetProperty(ref oldValue, value))
-                Workspace.SortKeys = value;    
+                Workspace.SortKeys = value;
         }
     }
 
@@ -488,7 +499,20 @@ public partial class TranslationWindowViewModel : ObservableObject
         var category = key.Split(':')[0];
         return category.Length > 1 ? char.ToUpper(category[0]) + category[1..] : category;
     }
-    
+
+    public void BackfillTranslation()
+    {
+        Workspace.BackfillTranslation();
+        
+        // High chance that the entire view model state needs to be refreshed
+        // TODO: Hacky? Should trigger a full update though
+        OnSelectedDisplayKeySortingChanged(SelectedDisplayKeySorting);
+        var lastValue = CurrentKeyIndex;
+        CurrentKeyIndex = CurrentKeyIndex == 0 ? 1 : 0;
+        CurrentKeyIndex = lastValue;
+        OnPropertyChanged(nameof(TranslationProgress));
+    }
+
     [RelayCommand]
     public void ClearSearch()
     {
@@ -504,7 +528,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     }
 
     public bool CanExecutePreviousMainKey() => CurrentKeyIndex > 0;
-    
+
     [RelayCommand(CanExecute = nameof(CanExecuteNextMainKey))]
     public void NextMainKey()
     {
@@ -513,79 +537,36 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     public bool CanExecuteNextMainKey() => CurrentKeyIndex < NavData.ListView.Count - 1;
 
-    [RelayCommand(CanExecute = nameof(CanExecutePreviousCategory))]
-    public void PreviousCategory()
+    [RelayCommand(CanExecute = nameof(CanExecutePreviousUntranslatedKey))]
+    public void PreviousUntranslatedKey()
     {
-        var category = GetKeyCategory(CurrentKey);
+        var previousUntranslatedKeyIndex = GetPreviousUntranslatedKeyIndex();
 
-        var currentIndex = NavData.CategoryStarts.FindIndex(x => x.Category == category);
-
-        if (currentIndex <= 0)
-            return;
-
-        CurrentKeyIndex = NavData.CategoryStarts[currentIndex - 1].Start;
+        if (previousUntranslatedKeyIndex != -1)
+            CurrentKeyIndex = Math.Clamp(previousUntranslatedKeyIndex, 0, NavData.ListView.Count - 1);
     }
 
-    public bool CanExecutePreviousCategory()
+    public bool CanExecutePreviousUntranslatedKey() => GetPreviousUntranslatedKeyIndex() != -1;
+
+    private int GetPreviousUntranslatedKeyIndex()
     {
-        var category = GetKeyCategory(CurrentKey);
-
-        var currentIndex = NavData.CategoryStarts.FindIndex(x => x.Category == category);
-
-        return currentIndex > 0;
+        var previousUntranslated = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex).FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+        return previousUntranslated != null ? NavData.ListView.IndexOf(previousUntranslated) : -1;
     }
 
-    [RelayCommand(CanExecute = nameof(CanExecuteNextCategory))]
-    public void NextCategory()
-    {
-        var category = GetKeyCategory(CurrentKey);
-
-        var currentIndex = NavData.CategoryStarts.FindIndex(x => x.Category == category);
-
-        if (currentIndex == -1 || currentIndex >= NavData.CategoryStarts.Count - 1)
-            return;
-
-        CurrentKeyIndex = NavData.CategoryStarts[currentIndex + 1].Start;
-    }
-
-    public bool CanExecuteNextCategory()
-    {
-        var category = GetKeyCategory(CurrentKey);
-
-        var currentIndex = NavData.CategoryStarts.FindIndex(x => x.Category == category);
-
-        return currentIndex != -1 && currentIndex < NavData.CategoryStarts.Count - 1;
-    }
-    
-    [RelayCommand]
-    public void FirstUntranslatedKey()
-    {
-        var keys = NavData.ListView;
-
-        var firstUntranslated = keys.FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
-        var firstUntranslatedIndex = firstUntranslated != null ? keys.IndexOf(firstUntranslated) : -1;
-
-        if (firstUntranslatedIndex == -1)
-            firstUntranslatedIndex = keys.Count - 1; // TODO: Replace with a notification that no such keys exist
-
-        CurrentKeyIndex = Math.Clamp(firstUntranslatedIndex, 0, keys.Count - 1);
-    }
-    
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanExecuteNextUntranslatedKey))]
     public void NextUntranslatedKey()
     {
-        var keys = NavData.ListView;
+        var nextUntranslatedKeyIndex = GetNextUntranslatedKeyIndex();
 
-        var nextUntranslated = keys.Skip(CurrentKeyIndex + 1).FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
-        var firstUntranslatedIndex = nextUntranslated != null ? keys.IndexOf(nextUntranslated) : -1;
+        CurrentKeyIndex = Math.Clamp(nextUntranslatedKeyIndex, 0, NavData.ListView.Count - 1);
+    }
 
-        if (firstUntranslatedIndex == -1)
-        {
-            // Go back to the start
-            FirstUntranslatedKey();
-            return;
-        }
+    public bool CanExecuteNextUntranslatedKey() => GetNextUntranslatedKeyIndex() != -1;
 
-        CurrentKeyIndex = Math.Clamp(firstUntranslatedIndex, 0, keys.Count - 1);
+    public int GetNextUntranslatedKeyIndex()
+    {
+        var nextUntranslated = NavData.ListView.Skip(CurrentKeyIndex + 1).FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+        return nextUntranslated != null ? NavData.ListView.IndexOf(nextUntranslated) : -1;
     }
 }

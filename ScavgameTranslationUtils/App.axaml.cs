@@ -2,6 +2,7 @@ using System.IO;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using ScavgameTranslationUtils.Models;
 using ScavgameTranslationUtils.ViewModels;
 using ScavgameTranslationUtils.Views;
 
@@ -33,6 +34,11 @@ public partial class App : Application
         
                 if (File.Exists(Program.Settings.EnglishTranslationPath))
                     await viewModel.OpenOriginalTranslation(Program.Settings.EnglishTranslationPath);
+
+                var translations = await Constants.FetchEnglishTranslationsAsync();
+
+                foreach (var pair in translations)
+                    Constants.KnownEnglishVersions.Add(pair.Key, pair.Value);
             });
         }
 
