@@ -7,6 +7,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+## [2026.05.17]
+
 ### Added
 - The English locale for versions v5.1, v6.0 and v6.1 of the game are now fetched and cached on app launch
 - The English locales for v5.1, v6.0, v6.1, and the currently opened EN.json file are used to check for untranslated
