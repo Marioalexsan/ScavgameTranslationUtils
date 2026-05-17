@@ -31,7 +31,7 @@
           <TextBlock Grid.Row="0" Grid.Column="1"
                      TextWrapping="Wrap"
                      Text="{Binding TranslationProgress, FallbackValue=0%, TargetNullValue=0%}" 
-                     ToolTip.Tip="Untranslated keys are marked with (*). Translated keys that are identical to their English counterparts are marked with (=); these may indicate missing translations."/>
+                     ToolTip.Tip="Untranslated keys are marked with (*). Translated keys that are identical to their English counterparts are marked with (=EN); these may indicate missing translations."/>
           <TextBlock Grid.Row="1" Grid.Column="0"
                      TextWrapping="Wrap"
                      Text="Translation name" />
@@ -156,7 +156,9 @@
                          Text="Key view order" />
               <ComboBox VerticalAlignment="Center"
                         ItemsSource="{Binding DisplayKeySortOptions}"
-                        SelectedItem="{Binding SelectedDisplayKeySorting}" />
+                        SelectedItem="{Binding SelectedDisplayKeySorting}"
+                        ToolTip.Tip="Changes how keys are ordered. You can choose to view keys either in the same order as how they appear in EN.json, or alphabetically."
+                        ToolTip.ShowDelay="100" />
               <TextBlock VerticalAlignment="Center"
                          Text="{Binding PaginationText, FallbackValue='Key 0 / Total 0', TargetNullValue='Key 0 / Total 0'}" />
             </StackPanel>
@@ -169,31 +171,63 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
               </Grid.ColumnDefinitions>
               <Button Grid.Row="0" Grid.Column="0"
                       Content="Previous"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Command="{Binding PreviousMainKeyCommand}" />
+                      Command="{Binding PreviousMainKeyCommand}" 
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the previous key"
+                      ToolTip.ShowDelay="100" />
               <Button Grid.Row="1" Grid.Column="0"
                       Content="Next"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Command="{Binding NextMainKeyCommand}" />
+                      Command="{Binding NextMainKeyCommand}"
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the next key"
+                      ToolTip.ShowDelay="100" />
               <Button Grid.Row="0" Grid.Column="1"
-                      Content="Previous untranslated"
+                      Content="Previous untranslated (*)"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Command="{Binding PreviousUntranslatedKeyCommand}" />
+                      Command="{Binding PreviousUntranslatedKeyCommand}" 
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the previous key that does not have a translation at the moment"
+                      ToolTip.ShowDelay="100" />
               <Button Grid.Row="1" Grid.Column="1"
-                      Content="Next untranslated"
+                      Content="Next untranslated (*)"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
-                      Command="{Binding NextUntranslatedKeyCommand}" />
-              <CheckBox Grid.Row="0" Grid.Column="2" 
+                      Command="{Binding NextUntranslatedKeyCommand}"
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the next key that does not have a translation at the moment"
+                      ToolTip.ShowDelay="100" />
+              <Button Grid.Row="0" Grid.Column="2"
+                      Content="Previous English (=EN)"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding PreviousIdenticalKeyCommand}"
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the previous key that is identical to an English text from any game version; this may or may not indicate untranslated text"
+                      ToolTip.ShowDelay="100" />
+              <Button Grid.Row="1" Grid.Column="2"
+                      Content="Next English (=EN)"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Command="{Binding NextIdenticalKeyCommand}" 
+                      ToolTip.ShowOnDisabled="True"
+                      ToolTip.Tip="Goes to the next key that is identical to an English text from any game version; this may or may not indicate untranslated text"
+                      ToolTip.ShowDelay="100" />
+              <CheckBox Grid.Row="0" Grid.Column="3" 
                         Content="Render in-game text to the right (colors, etc.)"
                         IsChecked="{Binding RenderText}"
-                        Margin="10, 0, 0, 0"/>
+                        Margin="10, 0, 0, 0"
+                        ToolTip.ShowOnDisabled="True"
+                        ToolTip.Tip="Toggling this on will render text in a similar way to how it would be done in-game (&lt;i&gt;, &lt;b&gt;, &lt;color&gt;, placeholders, etc.)"
+                        ToolTip.ShowDelay="100" />
             </Grid>
             <Grid ColumnSpacing="10" RowSpacing="10" Margin="10">
               <Grid.ColumnDefinitions>

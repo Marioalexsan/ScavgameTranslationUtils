@@ -16,12 +16,14 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
   - `moodles:thirst4dsc`
   - `moodles:sepsis3dsc`
   - `moodles:irradiated4dsc`
-- Tooltips for some UI elements
+- Tooltips for some UI elements to better describe their usage
 - Option to backfill the current locale with English text where translations are missing. It works like this:
   - Keys that do not have a translation are set to the English text from EN.json
   - Keys that match English text in v5.1, v6.0, or v6.1 game versions are updated to match the current EN.json file
   - Other keys in the translations are left as-is
   - Note: this is mainly meant to be used for maintainer work in the scavgame-locale repository
+- "Previous English" and "Next English" buttons to navigate to translated text that might actually be leftover
+  untranslated English text 
 
 ### Changed
 - "First untranslated" has been modified to be "Previous untranslated"

@@ -16,11 +16,11 @@ public partial class TranslationWindowViewModel : ObservableObject
         public DisplayNode? Parent { get; } = parent;
 
         public string PathPartView => AllItemsTranslated
-            ? (TranslationIdentical ? $"{PathPartDisplay} (=)" : PathPartDisplay)
+            ? (TranslationIdentical ? $"{PathPartDisplay} (=EN)" : PathPartDisplay)
             : $"{PathPartDisplay} (*)";
 
         public string FullPathView => AllItemsTranslated
-            ? (TranslationIdentical ? $"{FullPathDisplay} (=)" : FullPathDisplay)
+            ? (TranslationIdentical ? $"{FullPathDisplay} (=EN)" : FullPathDisplay)
             : $"{FullPathDisplay} (*)";
 
         public required string PathPart { get; init; }
@@ -232,6 +232,8 @@ public partial class TranslationWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(nameof(NextMainKeyCommand))]
     [NotifyCanExecuteChangedFor(nameof(PreviousUntranslatedKeyCommand))]
     [NotifyCanExecuteChangedFor(nameof(NextUntranslatedKeyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(PreviousIdenticalKeyCommand))]
+    [NotifyCanExecuteChangedFor(nameof(NextIdenticalKeyCommand))]
     private int _currentKeyIndex;
 
     partial void OnCurrentKeyIndexChanged(int value)
@@ -393,7 +395,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
             // TODO: Kinda crappy
             var display = $"Global: {globalCounter} / {globalTotal} ({globalCounter * 100f / globalTotal:F2} %) ({globalTotal - globalCounter} left)\n";
-            display += $"Global without identical keys: {globalCounter - globalIdentical} / {globalTotal} ({(globalCounter - globalIdentical) * 100f / globalTotal:F2} %)\n";
+            display += $"Global without English texts: {globalCounter - globalIdentical} / {globalTotal} ({(globalCounter - globalIdentical) * 100f / globalTotal:F2} %)\n";
 
             foreach (var category in categoryCounters)
             {
@@ -550,7 +552,8 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     private int GetPreviousUntranslatedKeyIndex()
     {
-        var previousUntranslated = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex).FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+        var previousUntranslated = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex)
+            .FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
         return previousUntranslated != null ? NavData.ListView.IndexOf(previousUntranslated) : -1;
     }
 
@@ -566,7 +569,50 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     public int GetNextUntranslatedKeyIndex()
     {
-        var nextUntranslated = NavData.ListView.Skip(CurrentKeyIndex + 1).FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+        var nextUntranslated = NavData.ListView.Skip(CurrentKeyIndex + 1)
+            .FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
         return nextUntranslated != null ? NavData.ListView.IndexOf(nextUntranslated) : -1;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanExecutePreviousIdenticalKey))]
+    public void PreviousIdenticalKey()
+    {
+        var previousIdenticalKeyIndex = GetPreviousIdenticalKeyIndex();
+
+        if (previousIdenticalKeyIndex != -1)
+            CurrentKeyIndex = Math.Clamp(previousIdenticalKeyIndex, 0, NavData.ListView.Count - 1);
+    }
+
+    public bool CanExecutePreviousIdenticalKey() => GetPreviousIdenticalKeyIndex() != -1;
+    
+    private int GetPreviousIdenticalKeyIndex()
+    {
+        var previousIdentical = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex)
+            .FirstOrDefault(x => 
+                Constants.IsLikelyUntranslatedEnglish(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath))
+                && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath)
+                );
+        return previousIdentical != null ? NavData.ListView.IndexOf(previousIdentical) : -1;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanExecuteNextIdenticalKey))]
+    public void NextIdenticalKey()
+    {
+        var nextIdenticalKeyIndex = GetNextIdenticalKeyIndex();
+
+        if (nextIdenticalKeyIndex != -1)
+            CurrentKeyIndex = Math.Clamp(nextIdenticalKeyIndex, 0, NavData.ListView.Count - 1);
+    }
+    
+    public bool CanExecuteNextIdenticalKey() => GetNextIdenticalKeyIndex() != -1;
+
+    public int GetNextIdenticalKeyIndex()
+    {
+        var nextIdentical = NavData.ListView.Skip(CurrentKeyIndex + 1)
+            .FirstOrDefault(x => 
+                Constants.IsLikelyUntranslatedEnglish(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath))
+                && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath)
+                );
+        return nextIdentical != null ? NavData.ListView.IndexOf(nextIdentical) : -1;
     }
 }
