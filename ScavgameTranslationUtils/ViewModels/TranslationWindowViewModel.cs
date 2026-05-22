@@ -51,9 +51,7 @@ public partial class TranslationWindowViewModel : ObservableObject
             {
                 var translatedText = workspace.GetText(FullPath);
                 var originalText = workspace.GetOriginalText(FullPath);
-                AllItemsTranslated =
-                    !string.IsNullOrWhiteSpace(translatedText)
-                    || translatedText == "" && originalText == "";
+                AllItemsTranslated = Constants.HasTranslation(FullPath, originalText, translatedText);
                 TranslationIdentical =
                     Constants.IsLikelyUntranslatedEnglish(FullPath, originalText, translatedText)
                     && !Constants.ShouldRemainIdenticalInTranslation(FullPath);
@@ -553,7 +551,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     private int GetPreviousUntranslatedKeyIndex()
     {
         var previousUntranslated = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex)
-            .FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+            .FirstOrDefault(x => !Constants.HasTranslation(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath)));
         return previousUntranslated != null ? NavData.ListView.IndexOf(previousUntranslated) : -1;
     }
 
@@ -570,7 +568,7 @@ public partial class TranslationWindowViewModel : ObservableObject
     public int GetNextUntranslatedKeyIndex()
     {
         var nextUntranslated = NavData.ListView.Skip(CurrentKeyIndex + 1)
-            .FirstOrDefault(x => Workspace.GetText(x.FullPath) == null);
+            .FirstOrDefault(x => !Constants.HasTranslation(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath)));
         return nextUntranslated != null ? NavData.ListView.IndexOf(nextUntranslated) : -1;
     }
 

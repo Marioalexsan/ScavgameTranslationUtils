@@ -84,6 +84,11 @@ public static class Constants
             if (displayParts.Length >= 3)
                 displayParts[2] = UpperFirst(parts[2]);
         }
+        
+        else if (parts[0] == "pauseQuotes" && parts.Length >= 2)
+        {
+            displayParts[0] = "Pause Quotes";
+        }
 
         return (displayParts, parts);
     }
@@ -337,6 +342,12 @@ public static class Constants
             _ => "",
         };
 
+        if (key.StartsWith("pauseQuotes:"))
+        {
+            assembledNotes += "\nPause quotes are from the point of view of the \"Observer\".";
+            assembledNotes += "\nThe Observer is a \"paranormal entity that oversees everything and is driven by curiosity\" in the game's world.";
+        }
+
         if (key.StartsWith("notes:") && key.EndsWith(":sprite"))
         {
             assembledNotes += "\nThe sprite that is shown when viewing the note (if any).";
@@ -371,13 +382,19 @@ public static class Constants
         return assembledNotes.Trim();
     }
 
+    public static bool HasTranslation(string key, string? original, string? translation)
+    {
+        return !string.IsNullOrWhiteSpace(translation)
+            || translation == "" && original == "";
+    }
+
     public static bool IsLikelyUntranslatedEnglish(string key, string? original, string? translation)
     {
         if (translation == null || original == null)
             return false;
 
-        if (original != translation && KnownEnglishVersions.Values.All(x => x.GetTextByPath(key) != translation))
-            return false;
+        if (original != translation && KnownEnglishVersions.Values.All(x => string.IsNullOrWhiteSpace(x.GetTextByPath(key)) || x.GetTextByPath(key) != translation))
+            return false; // Not equal to any non-empty English text from other versions
 
         if (original.All(x => char.IsPunctuation(x) || char.IsWhiteSpace(x)))
             return false; // Likely remains the same in translations

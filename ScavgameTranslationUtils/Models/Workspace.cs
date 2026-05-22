@@ -210,7 +210,7 @@ public class Workspace
             await JsonSerializer.SerializeAsync(translationStream, _translation, AppJsonContext.CreateContext(IndentSize).Localization);
         }
 
-        var maxBackups = 3;
+        var maxBackups = 5;
         var backupsToDelete =
             Directory.EnumerateFiles(backupsPathToUse, $"{translationName}-{pathHash}-*-backup.json")
                 .OrderDescending()

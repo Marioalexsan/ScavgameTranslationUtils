@@ -89,6 +89,10 @@ public class Localization
     [JsonPropertyOrder(9)]
     public List<PdaNote> PdaNotes { get; set; } = [];
 
+    [JsonPropertyName("pauseQuotes")]
+    [JsonPropertyOrder(10)]
+    public List<string> PauseQuotes { get; set; } = [];
+
     public List<string> GetPaths()
     {
         var paths = new List<string>();
@@ -125,6 +129,9 @@ public class Localization
             paths.Add($"pdaNotes:{pdaNotesIndex}:sprite");
         }
 
+        for (int pauseQuotesIndex = 0; pauseQuotesIndex < PauseQuotes.Count; pauseQuotesIndex++)
+            paths.Add($"pauseQuotes:{pauseQuotesIndex}");
+
         return paths;
     }
 
@@ -143,6 +150,9 @@ public class Localization
                 "buildings" => Buildings.TryGetValue(parts[1], out var value) ? value : null,
                 "moodles" => Moodles.TryGetValue(parts[1], out var value) ? value : null,
                 "other" => Other.TryGetValue(parts[1], out var value) ? value : null,
+                "pauseQuotes" => int.TryParse(parts[1], out var pauseQuoteIndex) && 0 <= pauseQuoteIndex && pauseQuoteIndex < PauseQuotes.Count
+                    ? PauseQuotes[pauseQuoteIndex]
+                    : null,
                 _ => null
             };
         }
@@ -219,6 +229,18 @@ public class Localization
             
             else if (parts[0] == "other")
                 Other[parts[1]] = text;
+            
+            else if (parts[0] == "pauseQuotes")
+            {
+                if (int.TryParse(parts[1], out var pauseQuoteIndex) && pauseQuoteIndex >= 0)
+                {
+                    // Backfill if needed
+                    while (pauseQuoteIndex >= PauseQuotes.Count)
+                        PauseQuotes.Add("");
+
+                    PauseQuotes[pauseQuoteIndex] = text;
+                }
+            }
         }
 
         else if (parts.Length == 3)
