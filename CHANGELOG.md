@@ -7,6 +7,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+## [2026.05.22]
+
 ### Added
 - Support for 7.0 pre-3's `"pauseQuotes"`
 - Translation notes for `"pauseQuotes"`
