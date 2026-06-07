@@ -7,6 +7,12 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+### Added
+- The app now internally fetches the English locale for 7.0.1
+
+### Fixed
+- Texture format issues that would cause the app to crash when loading game assets
+
 ## [2026.05.22]
 
 ### Added

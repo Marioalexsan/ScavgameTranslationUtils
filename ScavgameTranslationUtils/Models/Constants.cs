@@ -434,6 +434,10 @@ public static class Constants
                 "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v6.1/EN.json",
                 "3FEC04F51139DF1B9312D8B10AE508E40DF68B2D00CB2BBC96A38DC7A0D62980"
             ),
+            ["v7.0.1"] = (
+                "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v7.0.1/EN.json",
+                "CD0D1C61FE202E532DA26FF3678852C60833A0AFEA8CEE04273B9424B000E080"
+            ),
         };
 
         var fetchedTranslations = new Dictionary<string, Localization>();
