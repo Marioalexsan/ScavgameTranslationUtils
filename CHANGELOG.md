@@ -7,6 +7,8 @@ and this project adheres to [Calendar Versioning](https://calver.org/).
 
 ## [unreleased]
 
+## [2026.06.13]
+
 ### Added
 - The app now internally fetches the English locale for 7.0.1
 
