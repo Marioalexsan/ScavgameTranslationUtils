@@ -15,18 +15,18 @@
         Padding="20">
   <Grid ColumnSpacing="5" RowSpacing="5">
     <Grid.RowDefinitions>
-      <RowDefinition MinHeight="145" Height="*"/>
-      <RowDefinition MinHeight="40"/>
-      <RowDefinition MinHeight="40"/>
-      <RowDefinition MinHeight="40"/>
-      <RowDefinition MinHeight="40"/>
-      <RowDefinition MinHeight="40"/>
+      <RowDefinition MinHeight="145" Height="*" />
+      <RowDefinition MinHeight="40" />
+      <RowDefinition MinHeight="40" />
+      <RowDefinition MinHeight="40" />
+      <RowDefinition MinHeight="40" />
+      <RowDefinition MinHeight="40" />
     </Grid.RowDefinitions>
     <Grid.ColumnDefinitions>
-      <ColumnDefinition Width="250"/>
-      <ColumnDefinition MinWidth="500"/>
+      <ColumnDefinition Width="250" />
+      <ColumnDefinition MinWidth="500" />
     </Grid.ColumnDefinitions>
-    
+
     <Image Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2"
            Source="../Assets/sawians_2x.png"
            HorizontalAlignment="Stretch"
@@ -40,16 +40,27 @@
     <TextBlock Grid.Row="1" Grid.Column="1"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
-               Text="{Binding GameExecutablePath, FallbackValue='Game assets not found...', TargetNullValue='Game assets not found...'}" />
+               Text="{Binding GameExecutablePathTruncated, FallbackValue='Game assets not found...', TargetNullValue='Game assets not found...'}" 
+               ToolTip.Tip="{Binding GameExecutablePath}"/>
     <Button Grid.Row="2" Grid.Column="0"
             Click="OpenOriginalLocalization"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Center"
             Content="Select English Locale..." />
-    <TextBlock Grid.Row="2" Grid.Column="1"
-               HorizontalAlignment="Center"
-               VerticalAlignment="Center"
-               Text="{Binding EnglishTranslationPath, FallbackValue='English locale not found...', TargetNullValue='English locale not found...'}" />
+    <StackPanel Grid.Row="2" Grid.Column="1"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+      <ComboBox VerticalAlignment="Center"
+                SelectedItem="{Binding SelectedEnglishVersion}"
+                ItemsSource="{Binding KnownEnglishVersions}"
+                PlaceholderText="Local file"
+                ToolTip.Tip="Select a specific English file from GitHub."
+                ToolTip.ShowDelay="100" />
+      <TextBlock VerticalAlignment="Center"
+                 Text="{Binding EnglishTranslationPathTruncated, FallbackValue='English locale not found...', TargetNullValue='English locale not found...'}" 
+                 ToolTip.Tip="{Binding EnglishTranslationPath}"/>
+    </StackPanel>
     <Button Grid.Row="3" Grid.Column="0"
             Click="OpenTranslationFile"
             HorizontalAlignment="Stretch"
@@ -58,7 +69,8 @@
     <TextBlock Grid.Row="3" Grid.Column="1"
                HorizontalAlignment="Center"
                VerticalAlignment="Center"
-               Text="{Binding TranslationPath, FallbackValue='No translation selected...', TargetNullValue='No translation selected...'}" />
+               Text="{Binding TranslationPathTruncated, FallbackValue='No translation selected...', TargetNullValue='No translation selected...'}"
+               ToolTip.Tip="{Binding TranslationPath}"/>
     <Button Grid.Row="4" Grid.Column="0"
             Click="CreateTranslationFile"
             HorizontalAlignment="Stretch"
@@ -70,28 +82,28 @@
               HorizontalAlignment="Center"
               VerticalAlignment="Center"
               PlaceholderText="Specify a locale name to create"
-              SelectedIndex="{Binding #MainWindowElement.SelectedCountryCode}"
-              ItemsSource="{Binding #MainWindowElement.TranslationNames}" />
+              SelectedIndex="{Binding SelectedCountryCode}"
+              ItemsSource="{Binding TranslationNames}" />
     <StackPanel Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2">
       <StackPanel HorizontalAlignment="Center"
                   VerticalAlignment="Center"
                   Orientation="Horizontal"
                   Spacing="20">
-        <Button 
+        <Button
           Click="OpenBackupsFolder"
           MinWidth="180"
-          Content="Open Backups Folder..."/>
-        <Button 
+          Content="Open Backups Folder..." />
+        <Button
           Click="BeginTranslation"
           MinWidth="180"
           IsEnabled="{Binding CanTranslate}"
-          Content="Begin Translating!"/>
+          Content="Begin Translating!" />
       </StackPanel>
       <StackPanel Orientation="Horizontal"
                   HorizontalAlignment="Center">
         <TextBlock IsVisible="{Binding HasErrors}"
                    Foreground="Red"
-                   Text="{Binding ErrorMessage}"/>
+                   Text="{Binding ErrorMessage}" />
       </StackPanel>
     </StackPanel>
   </Grid>

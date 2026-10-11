@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 
 namespace ScavgameTranslationUtils.Models;
@@ -17,12 +16,6 @@ public class Workspace
     private Localization _translation;
 
     private bool _hasPendingChanges;
-
-    private List<string> _mainOrder;
-    private List<string> _buildingsOrder;
-    private List<string> _moodlesOrder;
-    private List<string> _otherOrder;
-    private Dictionary<int, List<string>> _characterOrder;
     
     public List<string> Paths { get; private set; }
     
@@ -57,28 +50,15 @@ public class Workspace
         _original = original;
         _translation = translation;
         Paths = original.GetPaths();
-        
-        _mainOrder = new List<string>(_original.Main.Keys);
-        _buildingsOrder = new List<string>(_original.Buildings.Keys);
-        _moodlesOrder = new List<string>(_original.Moodles.Keys);
-        _otherOrder = new List<string>(_original.Other.Keys);
-        _characterOrder = [];
-        
-        for (int characterIndex = 0; characterIndex < _original.Character.Count; characterIndex++)
-            _characterOrder[characterIndex] = new List<string>(_original.Character[characterIndex].Keys);
     }
     
     public static async Task<Workspace> CreateAsync(string originalPath, string translationPath)
     {
         Localization original, translation;
-        var context = AppJsonContext.CreateContext(4);
         
         await using (var originalStream = File.OpenRead(originalPath))
         {
-            // Use a stream reader to handle any potential UTF BOMs
-            var streamReader = new StreamReader(originalStream);
-            var text = await streamReader.ReadToEndAsync();
-            original = JsonSerializer.Deserialize(text, context.Localization) 
+            original = Localization.LoadFromStream(originalStream)
                        ?? throw new InvalidOperationException("Failed to load original text.");
         }
 
@@ -86,10 +66,7 @@ public class Workspace
         {
             await using (var translationStream = File.OpenRead(translationPath))
             {
-                // Use a stream reader to handle any potential UTF BOMs
-                var streamReader = new StreamReader(translationStream);
-                var text = await streamReader.ReadToEndAsync();
-                translation = JsonSerializer.Deserialize(text, context.Localization)
+                translation = Localization.LoadFromStream(translationStream)
                               ?? throw new InvalidOperationException("Failed to load translation text.");
             }
         }
@@ -98,7 +75,7 @@ public class Workspace
             await using (var file = File.OpenWrite(translationPath))
             {
                 translation = CreateNewTranslation(original);
-                await JsonSerializer.SerializeAsync(file, translation, context.Localization);
+                translation.SaveToStream(file, AppJsonContext.CreateWriterOptions(4));
             }
         }
 
@@ -118,7 +95,7 @@ public class Workspace
 
     public string Name
     {
-        get => _translation.Name;
+        get => _translation.Name ?? "";
         set
         {
             Program.LogDebug($"Setting translation name");
@@ -129,7 +106,7 @@ public class Workspace
     
     public string Description
     {
-        get => _translation.Description;
+        get => _translation.Description ?? "";
         set
         {
             Program.LogDebug($"Setting translation description");
@@ -137,38 +114,28 @@ public class Workspace
             _translation.Description = value;
         }
     }
-
-    private void ResortKeys()
+    
+    public string Version
     {
-        // Sort the dictionary keys according to EN.json sort to make it easier to review the JSONs directly
-        _translation.Main = new OrderedDictionary<string, string>(_translation.Main.OrderBy(x => _mainOrder.IndexOf(x.Key)));
-        _translation.Buildings = new OrderedDictionary<string, string>(_translation.Buildings.OrderBy(x => _buildingsOrder.IndexOf(x.Key)));
-        _translation.Moodles = new OrderedDictionary<string, string>(_translation.Moodles.OrderBy(x => _moodlesOrder.IndexOf(x.Key)));
-        _translation.Other = new OrderedDictionary<string, string>(_translation.Other.OrderBy(x => _otherOrder.IndexOf(x.Key)));
-        
-        var characterTranslations = new List<OrderedDictionary<string, List<string>>>();
-
-        for (int characterIndex = 0; characterIndex < _translation.Character.Count; characterIndex++)
+        get => _translation.Version ?? "";
+        set
         {
-            if (!_characterOrder.TryGetValue(characterIndex, out var orderToUse))
-                characterTranslations.Add(_translation.Character[characterIndex]);
-            else
-                characterTranslations.Add(new OrderedDictionary<string, List<string>>(_translation.Character[characterIndex].OrderBy(x => orderToUse.IndexOf(x.Key))));
+            Program.LogDebug($"Setting translation version");
+            _hasPendingChanges = true;
+            _translation.Version = value;
         }
-
-        _translation.Character = characterTranslations;
     }
 
     public async Task SaveChanges(bool force = false)
     {
         if (!force && !_hasPendingChanges)
             return;
-        
+
         if (SortKeys)
-            ResortKeys();
+            _translation.CopyOrderFrom(_original);
         
         await using var translationStream = File.Open(TranslationPath, FileMode.Create, FileAccess.Write);
-        await JsonSerializer.SerializeAsync(translationStream, _translation, AppJsonContext.CreateContext(IndentSize).Localization);
+        _translation.SaveToStream(translationStream, AppJsonContext.CreateWriterOptions(IndentSize));
 
         _hasPendingChanges = false;
         Program.LogDebug("Translation saved!");
@@ -207,7 +174,7 @@ public class Workspace
 
         await using (var translationStream = File.Open(backupPath, FileMode.Create, FileAccess.Write))
         {
-            await JsonSerializer.SerializeAsync(translationStream, _translation, AppJsonContext.CreateContext(IndentSize).Localization);
+            _translation.SaveToStream(translationStream, AppJsonContext.CreateWriterOptions(IndentSize));
         }
 
         var maxBackups = 5;
@@ -253,20 +220,19 @@ public class Workspace
     {
         var translation = new Localization()
         {
-            Name = "New Translation",
-            Description = "Translation created with ScavgameTranslationUtils",
+            Name = "New Translation (rename this to your language)",
+            Description = "Describe your translation in here. Keep in mind to credit any contributors, as this will" +
+                          "be shown within the game's locale settings menu.",
+            Version = original.Version,
         };
         
         // Some keys should be kept intact between locales, such as fonts and sprites
         foreach (var key in original.GetPaths())
         {
-            if (Constants.ShouldRemainIdenticalInTranslation(key))
-            {
-                var value = original.GetTextByPath(key);
-                
-                if (value != null)
-                    translation.SetTextByPath(key, value);
-            }
+            var value = original.GetTextByPath(key);
+
+            if (value != null && Constants.ShouldRemainIdenticalInTranslation(key, value))
+                translation.SetTextByPath(key, value);
         }
 
         return translation;

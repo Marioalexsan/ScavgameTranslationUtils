@@ -1,343 +1,306 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
-using System.Text.Json.Serialization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace ScavgameTranslationUtils.Models;
 
-// Note: JSON order should match the order of EN.json keys in the game
 public class Localization
 {
-    public class Note
+    private JsonObject _root;
+
+    private Localization(JsonObject root)
     {
-        [JsonPropertyName("Item1")]
-        [JsonPropertyOrder(1)]
-        public string? Text { get; set; }
-
-        [JsonPropertyName("Item2")]
-        [JsonPropertyOrder(2)]
-        public string? Sprite { get; set; }
-
-        [JsonPropertyName("Item3")]
-        [JsonPropertyOrder(3)]
-        public string? Font { get; set; }
-
-        public Note Clone()
-        {
-            return new Note()
-            {
-                Text = Text,
-                Sprite = Sprite,
-                Font = Font,
-            };
-        }
+        _root = root;
     }
 
-    public class PdaNote
+    public Localization()
     {
-        [JsonPropertyName("Item1")]
-        [JsonPropertyOrder(1)]
-        public string? Text { get; set; }
-
-        [JsonPropertyName("Item2")]
-        [JsonPropertyOrder(2)]
-        public string? Sprite { get; set; }
-
-        public PdaNote Clone()
-        {
-            return new PdaNote()
-            {
-                Text = Text,
-                Sprite = Sprite,
-            };
-        }
+        _root = new JsonObject();
     }
 
-    [JsonPropertyName("name")]
-    [JsonPropertyOrder(1)]
-    public string Name { get; set; } = "Unnamed translation";
+    public string? Name
+    {
+        get => GetTextByPath("name");
+        set => SetTextByPath("name", value);
+    }
+    
+    public string? Description
+    {
+        get => GetTextByPath("description");
+        set => SetTextByPath("description", value);
+    }
+    
+    public string? Version
+    {
+        get => GetTextByPath("version");
+        set => SetTextByPath("version", value);
+    }
+    
+    public static Localization? LoadFromText(string text)
+    {
+        var node = JsonNode.Parse(text);
 
-    [JsonPropertyName("description")]
-    [JsonPropertyOrder(2)]
-    public string Description { get; set; } = "";
+        if (node == null || node is not JsonObject objNode)
+            return null;
 
-    [JsonPropertyName("main")]
-    [JsonPropertyOrder(3)]
-    public OrderedDictionary<string, string> Main { get; set; } = [];
+        return new Localization(objNode);
+    }
 
-    [JsonPropertyName("buildings")]
-    [JsonPropertyOrder(4)]
-    public OrderedDictionary<string, string> Buildings { get; set; } = [];
+    // TODO: Async?
+    public static Localization? LoadFromStream(Stream stream)
+    {
+        var node = JsonNode.Parse(stream);
 
-    [JsonPropertyName("moodles")]
-    [JsonPropertyOrder(5)]
-    public OrderedDictionary<string, string> Moodles { get; set; } = [];
+        if (node == null || node is not JsonObject objNode)
+            return null;
 
-    [JsonPropertyName("other")]
-    [JsonPropertyOrder(6)]
-    public OrderedDictionary<string, string> Other { get; set; } = [];
+        return new Localization(objNode);
+    }
 
-    [JsonPropertyName("character")]
-    [JsonPropertyOrder(7)]
-    public List<OrderedDictionary<string, List<string>>> Character { get; set; } = [];
-
-    [JsonPropertyName("notes")]
-    [JsonPropertyOrder(8)]
-    public List<List<Note>> Notes { get; set; } = [];
-
-    [JsonPropertyName("pdaNotes")]
-    [JsonPropertyOrder(9)]
-    public List<PdaNote> PdaNotes { get; set; } = [];
-
-    [JsonPropertyName("pauseQuotes")]
-    [JsonPropertyOrder(10)]
-    public List<string> PauseQuotes { get; set; } = [];
-
+    // TODO: Async?
+    public void SaveToStream(Stream stream, JsonWriterOptions options)
+    {
+        using var jsonWriter = new Utf8JsonWriter(stream, options);
+        _root.WriteTo(jsonWriter);
+    }
+    
     public List<string> GetPaths()
     {
         var paths = new List<string>();
-        
-        paths.AddRange(Main.Keys.Select(key => $"main:{key}"));
-        paths.AddRange(Buildings.Keys.Select(key => $"buildings:{key}"));
-        paths.AddRange(Moodles.Keys.Select(key => $"moodles:{key}"));
-        paths.AddRange(Other.Keys.Select(key => $"other:{key}"));
-
-        for (int characterIndex = 0; characterIndex < Character.Count; characterIndex++)
-        {
-            var texts = Character[characterIndex];
-
-            foreach (var (key, variants) in texts)
-            {
-                for (int textVariant = 0; textVariant < variants.Count; textVariant++)
-                    paths.Add($"character:{characterIndex}:{key}:{textVariant}");
-            }
-        }
-
-        for (int biomeIndex = 0; biomeIndex < Notes.Count; biomeIndex++)
-        {
-            for (int noteIndex = 0; noteIndex < Notes[biomeIndex].Count; noteIndex++)
-            {
-                paths.Add($"notes:{biomeIndex}:{noteIndex}:text");
-                paths.Add($"notes:{biomeIndex}:{noteIndex}:sprite");
-                paths.Add($"notes:{biomeIndex}:{noteIndex}:font");
-            }
-        }
-
-        for (int pdaNotesIndex = 0; pdaNotesIndex < PdaNotes.Count; pdaNotesIndex++)
-        {
-            paths.Add($"pdaNotes:{pdaNotesIndex}:text");
-            paths.Add($"pdaNotes:{pdaNotesIndex}:sprite");
-        }
-
-        for (int pauseQuotesIndex = 0; pauseQuotesIndex < PauseQuotes.Count; pauseQuotesIndex++)
-            paths.Add($"pauseQuotes:{pauseQuotesIndex}");
-
+        AddPaths(_root, "");
         return paths;
+
+        void AddPaths(JsonNode? current, string currentPath)
+        {
+            if (current == null)
+                return;
+            
+            switch (current)
+            {
+                case JsonArray arr:
+                    var length = arr.Count;
+                    for (int index = 0; index < length; index++)
+                    {
+                        AddPaths(arr[index], currentPath == "" ? $"{index}" : $"{currentPath}:{index}");
+                    }
+                    break;
+                case JsonObject obj:
+                    foreach (var (key, value) in obj)
+                    {
+                        AddPaths(value, currentPath == "" ? $"{key}" : $"{currentPath}:{key}");
+                    }
+                    break;
+                case JsonValue value when value.GetValueKind() == JsonValueKind.String:
+                    paths.Add(currentPath);
+                    break;
+            }
+        }
+    }
+
+    public void CopyOrderFrom(Localization source)
+    {
+        JsonNode? nextRoot = _root;
+        CopyOrder(source._root, ref nextRoot);
+        
+        Debug.Assert(nextRoot != null && nextRoot is JsonObject);
+        
+        if (nextRoot is JsonObject nextRootObj)
+            _root = nextRootObj;
+        
+        static void CopyOrder(JsonNode? source, ref JsonNode? target)
+        {
+            if (source == null || target == null)
+                return;
+            
+            if (source is JsonObject objSource && target is JsonObject objTarget)
+            {
+                var keys = objSource.Select(x => x.Key).ToArray();
+
+                var newTarget = new JsonObject();
+                foreach (var (key, value) in objTarget.OrderBy(x => keys.IndexOf(x.Key)).ToArray())
+                {
+                    objTarget.Remove(key);
+                    newTarget.Add(key, value);
+                }
+                target.ReplaceWith(newTarget);
+                target = newTarget;
+
+                foreach (var (key, nextSource) in objSource)
+                {
+                    if (newTarget.TryGetPropertyValue(key, out var nextTarget))
+                        CopyOrder(nextSource, ref nextTarget);
+                }
+            }
+            else if (source is JsonArray arrSource && target is JsonArray arrTarget)
+            {
+                for (int index = 0; index < Math.Min(arrSource.Count, arrTarget.Count); index++)
+                {
+                    var nextTarget = arrTarget[index];
+                    CopyOrder(arrSource[index], ref nextTarget);
+                }
+            }
+        }
+    }
+
+    public string[] GetObjectKeyOrder(string path)
+    {
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, false);
+        return node is JsonObject obj ? obj.Select(x => x.Key).ToArray() : [];
+    }
+
+    public int GetArrayCount(string path)
+    {
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, false);
+        return node is JsonArray arr ? arr.Count : 0;
+    }
+
+    public void SetObjectKeyOrder(string path, string[] preferredOrder)
+    {
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, false);
+
+        if (node is not JsonObject obj)
+            return;
+
+        var newNode = new JsonObject();
+
+        foreach (var (key, value) in obj.OrderBy(x => preferredOrder.IndexOf(x.Key)))
+        {
+            newNode.Add(key, value);
+        }
+        
+        obj.ReplaceWith(newNode);
     }
 
     public string? GetTextByPath(string path)
     {
-        var parts = path.Split(':');
-
-        if (parts.Length == 1)
-            return null;
-
-        else if (parts.Length == 2)
-        {
-            return parts[0] switch
-            {
-                "main" => Main.TryGetValue(parts[1], out var value) ? value : null,
-                "buildings" => Buildings.TryGetValue(parts[1], out var value) ? value : null,
-                "moodles" => Moodles.TryGetValue(parts[1], out var value) ? value : null,
-                "other" => Other.TryGetValue(parts[1], out var value) ? value : null,
-                "pauseQuotes" => int.TryParse(parts[1], out var pauseQuoteIndex) && 0 <= pauseQuoteIndex && pauseQuoteIndex < PauseQuotes.Count
-                    ? PauseQuotes[pauseQuoteIndex]
-                    : null,
-                _ => null
-            };
-        }
-
-        else if (parts.Length == 3)
-        {
-            return parts[0] switch
-            {
-                "pdaNotes" =>
-                    int.TryParse(parts[1], out var index)
-                    && 0 <= index && index < PdaNotes.Count
-                        ? parts[2] switch
-                        {
-                            "text" => PdaNotes[index].Text,
-                            "sprite" => PdaNotes[index].Sprite,
-                            _ => null
-                        }
-                        : null,
-                _ => null
-            };
-        }
-        
-        else if (parts.Length == 4)
-        {
-            return parts[0] switch
-            {
-                "character" =>
-                    int.TryParse(parts[1], out var characterIndex)
-                    && 0 <= characterIndex && characterIndex < Character.Count
-                    && Character[characterIndex].TryGetValue(parts[2], out var variants)
-                    && int.TryParse(parts[3], out var variantIndex)
-                    && 0 <= variantIndex && variantIndex < variants.Count
-                        ? variants[variantIndex]
-                        : null,
-                "notes" => 
-                    int.TryParse(parts[1], out var biomeIndex)
-                    && 0 <= biomeIndex && biomeIndex < Notes.Count
-                    && int.TryParse(parts[2], out var noteIndex)
-                    && 0 <= noteIndex && noteIndex < Notes[biomeIndex].Count
-                    ? parts[3] switch
-                    {
-                        "text" => Notes[biomeIndex][noteIndex].Text,
-                        "sprite" => Notes[biomeIndex][noteIndex].Sprite,
-                        "font" => Notes[biomeIndex][noteIndex].Font,
-                        _ => null
-                    }
-                    : null,
-                _ => null
-            };
-        }
-
-        else return null;
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, false);
+        return
+            node != null && 
+            node is JsonValue jsonValue && 
+            jsonValue.TryGetValue(out string? str) ? str : null;
     }
     
-    public void SetTextByPath(string path, string text)
+    public bool SetTextByPath(string path, string? text, bool forceConform = true)
     {
-        var parts = path.Split(':');
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, true, forceConform);
 
-        text = text.ReplaceLineEndings("\n");
-
-        if (parts.Length == 1)
-            return;
-
-        else if (parts.Length == 2)
+        if (node != null && node.GetValueKind() == JsonValueKind.String)
         {
-            if (parts[0] == "main")
-                Main[parts[1]] = text;
-            
-            else if (parts[0] == "buildings")
-                Buildings[parts[1]] = text;
-            
-            else if (parts[0] == "moodles")
-                Moodles[parts[1]] = text;
-            
-            else if (parts[0] == "other")
-                Other[parts[1]] = text;
-            
-            else if (parts[0] == "pauseQuotes")
-            {
-                if (int.TryParse(parts[1], out var pauseQuoteIndex) && pauseQuoteIndex >= 0)
-                {
-                    // Backfill if needed
-                    while (pauseQuoteIndex >= PauseQuotes.Count)
-                        PauseQuotes.Add("");
-
-                    PauseQuotes[pauseQuoteIndex] = text;
-                }
-            }
+            node.ReplaceWith(JsonValue.Create(text));
+            return true;
         }
 
-        else if (parts.Length == 3)
-        {
-            if (parts[0] == "pdaNotes")
-            {
-                if (int.TryParse(parts[1], out var index) && index >= 0)
-                {
-                    // Backfill if needed
-                    while (index >= PdaNotes.Count)
-                        PdaNotes.Add(new PdaNote());
-                    
-                    if (parts[2] == "text")
-                        PdaNotes[index].Text = text;
-                    
-                    else if (parts[2] == "sprite")
-                        PdaNotes[index].Sprite = text;
-                }
-            }
-        }
-        
-        else if (parts.Length == 4)
-        {
-            if (parts[0] == "character")
-            {
-                if (int.TryParse(parts[1], out var characterIndex) && characterIndex >= 0)
-                {
-                    // Backfill if needed
-                    while (characterIndex >= Character.Count)
-                        Character.Add([]);
-
-                    if (!Character[characterIndex].TryGetValue(parts[2], out var variants))
-                        variants = Character[characterIndex][parts[2]] = [];
-                    
-                    if (int.TryParse(parts[3], out var variantIndex) && variantIndex >= 0)
-                    {
-                        // Backfill if needed
-                        while (variantIndex >= variants.Count)
-                            variants.Add("");
-                            
-                        variants[variantIndex] = text;
-                    }
-                }
-            }
-            
-            else if (parts[0] == "notes")
-            {
-                if (int.TryParse(parts[1], out var biomeIndex) && biomeIndex >= 0)
-                {
-                    // Backfill if needed
-                    while (biomeIndex >= Notes.Count)
-                        Notes.Add([]);
-
-                    if (int.TryParse(parts[2], out var noteIndex) && noteIndex >= 0)
-                    {
-                        var biomeNotes = Notes[biomeIndex];
-                        
-                        // Backfill if needed
-                        while (noteIndex >= biomeNotes.Count)
-                            biomeNotes.Add(new Note());
-
-                        if (parts[3] == "text")
-                            biomeNotes[noteIndex].Text = text;
-                    
-                        else if (parts[3] == "sprite")
-                            biomeNotes[noteIndex].Sprite = text;
-                    
-                        else if (parts[3] == "font")
-                            biomeNotes[noteIndex].Font = text;
-                    }
-                }
-            }
-        }
+        return false;
     }
 
-    public Localization Clone()
+    public bool DeleteTextByPath(string path, string? text)
     {
-        return new Localization()
+        var pathParts = path.Split(':');
+        var node = GetNode(_root, pathParts, false);
+
+        if (node != null && node.GetValueKind() == JsonValueKind.String && node.Parent != null)
         {
-            Name = Name,
-            Description = Description,
-            Main = new OrderedDictionary<string, string>(Main),
-            Buildings = new OrderedDictionary<string, string>(Buildings),
-            Moodles = new OrderedDictionary<string, string>(Moodles),
-            Other = new OrderedDictionary<string, string>(Other),
-            Character = new List<OrderedDictionary<string, List<string>>>(
-                Character.Select(
-                    x => new OrderedDictionary<string, List<string>>(
-                        x.Select(y => new KeyValuePair<string, List<string>>(
-                            y.Key, 
-                            new List<string>(y.Value))
-                        )
-                    )
-                )
-            ),
-            Notes = Notes.Select(x => x.Select(y => y.Clone()).ToList()).ToList(),
-            PdaNotes = PdaNotes.Select(x => x.Clone()).ToList()
+            switch (node.Parent)
+            {
+                case JsonArray array:
+                    var index = array.IndexOf(node);
+
+                    if (index != -1)
+                    {
+                        // Can only delete items at the end of the array; we do not want to leave gaps
+                        if (index != array.Count - 1)
+                            return false;
+                        
+                        array.Remove(node);
+                    }
+                    break;
+                case JsonObject obj:
+                    var propertyName = obj.FirstOrDefault(x => x.Value == node).Key;
+                    
+                    if (propertyName != null)
+                        obj.Remove(propertyName);
+                    break;
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    private static JsonNode? GetNode(JsonNode current, Span<string> parts, bool initIntermediaryNotes, bool forceConform = false)
+    {
+        if (parts.Length == 0)
+            return current;
+            
+        // The (intermediary) node to set should be an array if the next property is an integer, and an object otherwise
+        bool? backfillAsArray = parts.Length <= 1 ? null : int.TryParse(parts[1], out _);
+
+        static JsonNode GetBackfill(bool? type) => type switch
+        {
+            null => "",
+            false => new JsonObject(),
+            true => new JsonArray()
         };
+            
+        switch (current)
+        {
+            case JsonArray arr:
+                if (!int.TryParse(parts[0], out int index) || index < 0)
+                    return null;
+
+                if (initIntermediaryNotes)
+                {
+                    while (index >= arr.Count)
+                        arr.Add(GetBackfill(backfillAsArray));
+                }
+
+                if (index >= arr.Count)
+                    return null;
+
+                if (forceConform)
+                {
+                    bool doesNotMatch =
+                        backfillAsArray == true && arr[index] is not JsonArray ||
+                        backfillAsArray == false && arr[index] is not JsonObject;
+                    
+                    if (doesNotMatch)
+                        arr[index]!.ReplaceWith(GetBackfill(backfillAsArray));
+                }
+
+                return GetNode(arr[index]!, parts[1..], initIntermediaryNotes, forceConform);
+            case JsonObject obj:
+                if (!obj.TryGetPropertyValue(parts[0], out var value) && initIntermediaryNotes)
+                    obj[parts[0]] = value = GetBackfill(backfillAsArray);
+
+                if (value == null)
+                    return null;
+                
+                if (forceConform)
+                {
+                    bool doesNotMatch =
+                        backfillAsArray == true && value is not JsonArray ||
+                        backfillAsArray == false && value is not JsonObject;
+
+                    if (doesNotMatch)
+                    {
+                        var newValue = GetBackfill(backfillAsArray);
+                        value.ReplaceWith(newValue);
+                        value = newValue;
+                    }
+                }
+
+                return GetNode(value, parts[1..], initIntermediaryNotes, forceConform);
+            default:
+                return null;
+        }
     }
 }

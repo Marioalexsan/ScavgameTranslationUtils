@@ -1,7 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -16,50 +13,8 @@ public partial class MainWindow : Window
 {
     public record SimpleCultureInfo(string DisplayName, string Name);
     
-    static MainWindow()
-    {
-        var baseCultures = CultureInfo.GetCultures(CultureTypes.AllCultures)
-            .ToList();
-
-        var cultureList = baseCultures
-            .Select(x => new SimpleCultureInfo(x.DisplayName, x.Name))
-            .ToList();
-
-        cultureList.RemoveAll(x => x.Name == ""); // Don't need the invariant culture
-
-        AliasLocale("zh-Hans-CN", "zh-CN"); // Uses simplified system in scavgame-locale
-        AliasLocale("zh-Hans-SG", "zh-SG"); // Assuming to be simplified
-        AliasLocale("zh-Hant-MO", "zh-MO"); // Assuming to be traditional
-        AliasLocale("zh-Hant-HK", "zh-HK"); // Assuming to be traditional
-        AliasLocale("zh-Hant-TW", "zh-TW"); // Uses traditional system in scavgame-locale
-
-        KnownCultures = cultureList.OrderBy(x => x.DisplayName).ToList();
-        TranslationNames = KnownCultures
-            .Select(x => $"{x.DisplayName} [{x.Name}]")
-            .ToList();
-        TranslationCountryCodes = KnownCultures
-            .Select(x => x.Name)
-            .ToList();
-
-        void AliasLocale(string original, string alias)
-        {
-            var locale = cultureList.Find(x => x.Name == original);
-        
-            if (locale != null)
-                cultureList.Add(new SimpleCultureInfo(locale.DisplayName, alias));
-        }
-    }
-    
     // TODO: Better pattern?
     public MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;
-
-    public static List<SimpleCultureInfo> KnownCultures { get; }
-
-    public static List<string> TranslationNames { get; }
-    
-    public static List<string> TranslationCountryCodes { get; }
-
-    public int SelectedCountryCode { get; set; } = -1;
     
     public MainWindow()
     {
@@ -106,13 +61,18 @@ public partial class MainWindow : Window
         {
             var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions()
             {
-                Title = "Select Casualties: Unknown executable or EN.json",
+                Title = "Select EN.json or Casualties: Unknown executable",
                 AllowMultiple = false,
                 FileTypeFilter =
                 [
-                    new FilePickerFileType("EN.json or game executable")
+                    // For some reason, grouping EN.json and CasualtiesUnknown.exe under one list doesn't work correctly
+                    new FilePickerFileType("EN.json")
                     {
-                        Patterns = ["EN.json", "CasualtiesUnknown.exe"]
+                        Patterns = ["EN.json"]
+                    },
+                    new FilePickerFileType("Game executable")
+                    {
+                        Patterns = ["CasualtiesUnknown.exe"]
                     },
                     new FilePickerFileType("Any file")
                     {
@@ -125,6 +85,7 @@ public partial class MainWindow : Window
                 return;
 
             await ViewModel.OpenOriginalTranslation(files[0].Path.LocalPath);
+            ViewModel.SelectedEnglishVersion = null;
         });
     }
 
@@ -166,10 +127,8 @@ public partial class MainWindow : Window
 
         Dispatcher.UIThread.InvokeAsync(async () =>
         {
-            var selectedIndex = CountryCodeComboBox.SelectedIndex;
-
-            var selectedName = 0 <= selectedIndex && selectedIndex < TranslationCountryCodes.Count
-                ? TranslationCountryCodes[SelectedCountryCode]
+            var selectedName = 0 <= ViewModel.SelectedCountryCode && ViewModel.SelectedCountryCode < ViewModel.TranslationCountryCodes.Count
+                ? ViewModel.TranslationCountryCodes[ViewModel.SelectedCountryCode]
                 : "lang-COUNTRY";
 
             var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions()

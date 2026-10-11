@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Calendar Versioning](https://calver.org/).
 
-## [unreleased]
+<!-- ## [unreleased] -->
+
+## [2026.10.11]
+
+### Added
+- Combo box that allows selecting an English locale version downloaded directly from the GitHub repository
+
+### Changed
+- Locale parsing was rewritten so that it supports most (or all?) EN.json versions regardless of their structure
+- Name and description for a locale are now placed alongside the rest of the translation keys
+- File paths on the main window are now truncated if they're too long; the full path is still available as a tooltip
+  if needed
+
+### Fixed
+- Game sprites should now load properly regardless of their pixel format within the game
 
 ## [2026.06.13]
 

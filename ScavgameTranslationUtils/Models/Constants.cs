@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -16,7 +17,7 @@ using Avalonia.Media.Immutable;
 
 namespace ScavgameTranslationUtils.Models;
 
-public static class Constants
+public static partial class Constants
 {
     public static string UpperFirst(string part)
     {
@@ -30,7 +31,14 @@ public static class Constants
         var parts = path.Split(':');
         var displayParts = parts.ToArray();
 
-        if (parts[0] == "main"
+        if (parts[0] == "name"
+            || parts[0] == "description"
+            || parts[0] == "version")
+        {
+            displayParts[0] = UpperFirst(parts[0]);
+        }
+
+        else if (parts[0] == "main"
             || parts[0] == "buildings"
             || parts[0] == "other"
             || parts[0] == "moodles")
@@ -68,8 +76,15 @@ public static class Constants
                     ? MapNoteIndexToNote(workspace, noteIndex)
                     : parts[2];
 
+
             if (displayParts.Length >= 4)
-                displayParts[3] = UpperFirst(parts[3]);
+                displayParts[3] = parts[3] switch
+                {
+                    "Item1" => "Text",
+                    "Item2" => "Sprite",
+                    "Item3" => "Font",
+                    _ => UpperFirst(parts[3]),
+                };
         }
 
         else if (parts[0] == "pdaNotes" && parts.Length >= 3)
@@ -81,13 +96,20 @@ public static class Constants
                     ? MapPdaNoteIndexToPdaNote(workspace, pdaIndex)
                     : parts[1];
 
-            if (displayParts.Length >= 3)
-                displayParts[2] = UpperFirst(parts[2]);
+            displayParts[2] = parts[2] switch
+            {
+                "Item1" => "Text",
+                "Item2" => "Sprite",
+                _ => UpperFirst(parts[2]),
+            };
         }
         
-        else if (parts[0] == "pauseQuotes" && parts.Length >= 2)
+        else if (parts[0] == "pauseQuotes")
         {
             displayParts[0] = "Pause Quotes";
+            
+            if (parts.Length >= 2)
+                displayParts[1] = UpperFirst(parts[1]);
         }
 
         return (displayParts, parts);
@@ -310,10 +332,26 @@ public static class Constants
 
     public static string GetTranslationNotes(Workspace workspace, string key)
     {
-        // Custom notes
-        // TODO: Move to a JSON file
+        var originalText = workspace.GetOriginalText(key);
+        
         var assembledNotes = key switch
         {
+            "name" =>
+                """
+                This should be the localized name of your language (i.e. "Polski" for Polish, etc.).
+                It will be displayed on the selection button for your locale in the locale menu.
+                """,
+            "description" =>
+                """
+                This should be a localized description of your translation.
+                It will be displayed when mousing over the selection button for your locale in the locale menu.
+                You should include the contributor list at the end of the description.
+                """,
+            "version" =>
+                """
+                The version of the translation file as indicated by Orsoniks / moffee.
+                Keep this the same as in the original.
+                """,
             "other:jsonthing" =>
                 """
                 As mentioned by the developer, this key is not necessary.
@@ -344,36 +382,41 @@ public static class Constants
 
         if (key.StartsWith("pauseQuotes:"))
         {
-            assembledNotes += "\nPause quotes are from the point of view of the \"Observer\".";
-            assembledNotes += "\nThe Observer is a \"paranormal entity that oversees everything and is driven by curiosity\" in the game's world.";
+            assembledNotes += "\nPause quotes are from the point of view of the \"Observer\"." +
+                              "\nThe Observer is a \"paranormal entity that oversees everything and is driven by curiosity\" in the game's world.";
         }
 
-        if (key.StartsWith("notes:") && key.EndsWith(":sprite"))
+        if (key.StartsWith("notes:") && key.EndsWith(":Item2"))
         {
-            assembledNotes += "\nThe sprite that is shown when viewing the note (if any).";
-            assembledNotes += "\nThe sprite will be rendered on the right if you have loaded the game assets.";
-            assembledNotes += "\nThis should keep the same value from the English translation!";
+            assembledNotes += "\nThe sprite that is shown when viewing the note (if any)." +
+                              "\nThe sprite will be rendered on the right if you have loaded the game assets." +
+                              "\nThis should keep the same value from the English translation!";
         }
 
-        if (key.StartsWith("pdaNotes:") && key.EndsWith(":sprite"))
+        if (key.StartsWith("pdaNotes:") && key.EndsWith(":Item2"))
         {
-            assembledNotes += "\nCurrently unused.";
-            assembledNotes += "\nThis should keep the same value from the English translation!";
+            assembledNotes += "\nCurrently unused." +
+                              "\nThis should keep the same value from the English translation!";
         }
 
-        if (key.StartsWith("notes:") && key.EndsWith(":text"))
+        if (key.StartsWith("notes:") && key.EndsWith(":Item1"))
         {
-            assembledNotes += "\nPay attention to which in-game character wrote this note!";
-            assembledNotes += "\nMilkies have good writing, with proper grammar and punctuation.";
-            assembledNotes += "\nExperiments have mediocre writing, with missing punctuation and capitals.";
-            assembledNotes += "\nDunes have bad writing, with grammar issues, and refer to themselves in third person.";
+            assembledNotes += "\nPay attention to which in-game character wrote this note!" + 
+                              "\nMilkies have good writing, with proper grammar and punctuation." +
+                              "\nExperiments have mediocre writing, with missing punctuation and capitals." +
+                              "\nDunes have bad writing, with grammar issues, and refer to themselves in third person.";
         }
 
-        if (key.StartsWith("notes:") && key.EndsWith(":font"))
+        if (key.StartsWith("notes:") && key.EndsWith(":Item3"))
         {
-            assembledNotes += "\nFonts represent the character who wrote the note.";
-            assembledNotes += "\nCurrently, the valid options are 'experiment', 'milky', and 'dune'.";
-            assembledNotes += "\nThis should keep the same value from the English translation!";
+            assembledNotes += "\nFonts represent the character who wrote the note." +
+                              "\nCurrently, the valid options are 'experiment', 'milky', and 'dune'." +
+                              "\nThis should keep the same value from the English translation!";
+        }
+        
+        if (originalText != null && originalText.Contains("<spoiler>"))
+        {
+            assembledNotes += "\nSpoilered content should be left as-is until it is revealed, i.e. \"<spoiler>\".";
         }
 
         if (assembledNotes == "")
@@ -388,7 +431,7 @@ public static class Constants
             || translation == "" && original == "";
     }
 
-    public static bool IsLikelyUntranslatedEnglish(string key, string? original, string? translation)
+    public static bool IsLikelyUntranslatedEnglish(string key, [NotNullWhen(true)] string? original, [NotNullWhen(true)] string? translation)
     {
         if (translation == null || original == null)
             return false;
@@ -402,18 +445,41 @@ public static class Constants
         return true;
     }
 
+    [GeneratedRegex(@"^[\s.,;:?!\-_0-9\/\\'""{}[\]=+@~#]*$")]
+    private static partial Regex OnlySymbolsRegex();
+
     /// <summary>
     /// Returns true if a key should normally remain identical in the translation.
     /// </summary>
-    public static bool ShouldRemainIdenticalInTranslation(string key)
+    public static bool ShouldRemainIdenticalInTranslation(string key, string text)
     {
-        // Fonts and sprites normally don't require "translation"
-        return
-            key.StartsWith("notes:") && key.EndsWith(":font")
-            || (key.StartsWith("notes:") || key.StartsWith("pdaNotes:")) && key.EndsWith(":sprite");
+        // PDA sprites don't require "translation"
+        if (key.StartsWith("notes:") && (key.EndsWith(":Item2") || key.EndsWith(":Item3")))
+            return true;
+        
+        // PDA sprites (although unused right now) don't require translation
+        if (key.StartsWith("pdaNotes:") && key.EndsWith(":Item2"))
+            return true;
+        
+        // Spoilers should remain as-is
+        if (text == "<spoiler>")
+            return true;
+        
+        // Version should remain as-is
+        if (key == "version")
+            return true;
+        
+        // No actual text to translate here, so keep it identical
+        if (OnlySymbolsRegex().IsMatch(text))
+            return true;
+
+        return false;
     }
 
-    private static readonly string EnglishLocaleVersions = Path.Combine(Program.AppDataPath, "en_locales");
+    public static readonly string EnglishLocaleVersions = Path.Combine(Program.AppDataPath, "en_locales");
+
+    public static string GetEnglishLocaleVersionPath(string version) =>
+        Path.Combine(EnglishLocaleVersions, $"EN-{version}.json");
     
     public static Dictionary<string, Localization> KnownEnglishVersions { get; } = [];
 
@@ -438,6 +504,10 @@ public static class Constants
                 "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v7.0.1/EN.json",
                 "CD0D1C61FE202E532DA26FF3678852C60833A0AFEA8CEE04273B9424B000E080"
             ),
+            ["1.0-pre3"] = (
+                "https://raw.githubusercontent.com/orsoniks/scavgame-locale/refs/tags/v1.0-pre3/release/EN.json",
+                "3D804E7491A5FC961D6C0A9D3D63CE168ADA1D70D0716B30DCB738A6E9436AAE"
+            ),
         };
 
         var fetchedTranslations = new Dictionary<string, Localization>();
@@ -453,13 +523,12 @@ public static class Constants
             var (url, hash) = localeData;
             try
             {
-                var desiredPath = Path.Combine(EnglishLocaleVersions, $"EN-{version}.json");
+                var desiredPath = GetEnglishLocaleVersionPath(version);
 
                 if (File.Exists(desiredPath))
                 {
-                    var data = await File.ReadAllTextAsync(desiredPath);
-                    fetchedTranslations[version] =
-                        JsonSerializer.Deserialize<Localization>(data, serializer.Localization)
+                    await using var stream = File.OpenRead(desiredPath);
+                    fetchedTranslations[version] = Localization.LoadFromStream(stream)
                         ?? throw new InvalidOperationException($"Deserializer returned null for localization at {desiredPath}");
                     Program.LogDebug($"Read cached translation from {desiredPath}");
                     continue;
@@ -476,8 +545,7 @@ public static class Constants
                 if (!responseHash.SequenceEqual(expectedHash))
                     throw new InvalidOperationException($"Hash integrity check failed for {version}");
                 
-                fetchedTranslations[version] =
-                    JsonSerializer.Deserialize<Localization>(body, serializer.Localization)
+                fetchedTranslations[version] = Localization.LoadFromText(body)
                     ?? throw new InvalidOperationException($"Deserializer returned null for localization at {desiredPath}");
                 
                 File.WriteAllText(desiredPath, body);

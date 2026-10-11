@@ -51,7 +51,7 @@ public partial class TranslationWindow : Window
         });
     }
 
-    private async void BackfllWithEnglishText(object? sender, RoutedEventArgs e)
+    private async void BackfillWithEnglishText(object? sender, RoutedEventArgs e)
     {
         if (ViewModel == null)
             return;

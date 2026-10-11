@@ -5,7 +5,6 @@ using ScavgameTranslationUtils.Models;
 
 namespace ScavgameTranslationUtils;
 
-[JsonSerializable(typeof(Localization))]
 [JsonSerializable(typeof(AppSettings))]
 public partial class AppJsonContext : JsonSerializerContext
 {
@@ -16,6 +15,16 @@ public partial class AppJsonContext : JsonSerializerContext
         IndentCharacter = ' ',
         IndentSize = indentSize,
         AllowTrailingCommas = true, // To deal with some specific old locales
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        NewLine = "\n"
     });
+
+    public static JsonWriterOptions CreateWriterOptions(int indentSize) => new JsonWriterOptions()
+    {
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+        Indented = true,
+        IndentCharacter = ' ',
+        IndentSize = indentSize,
+        NewLine = "\n"
+    };
 }

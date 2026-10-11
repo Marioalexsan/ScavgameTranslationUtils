@@ -38,7 +38,10 @@ public partial class App : Application
                 var translations = await Constants.FetchEnglishTranslationsAsync();
 
                 foreach (var pair in translations)
+                {
                     Constants.KnownEnglishVersions.Add(pair.Key, pair.Value);
+                    viewModel.KnownEnglishVersions.Add(pair.Key);
+                }
             });
         }
 

@@ -54,7 +54,7 @@ public partial class TranslationWindowViewModel : ObservableObject
                 AllItemsTranslated = Constants.HasTranslation(FullPath, originalText, translatedText);
                 TranslationIdentical =
                     Constants.IsLikelyUntranslatedEnglish(FullPath, originalText, translatedText)
-                    && !Constants.ShouldRemainIdenticalInTranslation(FullPath);
+                    && !Constants.ShouldRemainIdenticalInTranslation(FullPath, originalText);
             }
             else
             {
@@ -186,7 +186,7 @@ public partial class TranslationWindowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(NonDisplayBoxesColumnSpan))]
-    public bool _renderText = true;
+    public bool _renderText = false;
 
     public int NonDisplayBoxesColumnSpan => RenderText ? 1 : 2;
 
@@ -373,7 +373,7 @@ public partial class TranslationWindowViewModel : ObservableObject
                 {
                     globalCounter++;
 
-                    if (Constants.IsLikelyUntranslatedEnglish(path, originalText, translatedText) && !Constants.ShouldRemainIdenticalInTranslation(path))
+                    if (Constants.IsLikelyUntranslatedEnglish(path, originalText, translatedText) && !Constants.ShouldRemainIdenticalInTranslation(path, originalText))
                         globalIdentical++;
                 }
 
@@ -444,7 +444,7 @@ public partial class TranslationWindowViewModel : ObservableObject
             return [];
 
         // TODO Parse properly
-        if (key.EndsWith(":sprite"))
+        if (key.EndsWith(":Item2"))
             return Constants.RenderSprite(GameAssets?.GetGameSprite(text));
 
         return Constants.RenderText(GameAssets, Constants.ReplacePlaceholders(key, text));
@@ -469,6 +469,17 @@ public partial class TranslationWindowViewModel : ObservableObject
             var oldValue = Workspace.Description;
             if (SetProperty(ref oldValue, value))
                 Workspace.Description = value;
+        }
+    }
+
+    public string CurrentVersion
+    {
+        get => Workspace.Version;
+        set
+        {
+            var oldValue = Workspace.Version;
+            if (SetProperty(ref oldValue, value))
+                Workspace.Version = value;
         }
     }
 
@@ -586,10 +597,15 @@ public partial class TranslationWindowViewModel : ObservableObject
     private int GetPreviousIdenticalKeyIndex()
     {
         var previousIdentical = NavData.ListView.Reverse().Skip(NavData.ListView.Count - CurrentKeyIndex)
-            .FirstOrDefault(x => 
-                Constants.IsLikelyUntranslatedEnglish(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath))
-                && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath)
-                );
+            .FirstOrDefault(x =>
+            {
+                var originalText = Workspace.GetOriginalText(x.FullPath);
+                var translatedText = Workspace.GetText(x.FullPath);
+
+                return Constants.IsLikelyUntranslatedEnglish(x.FullPath, originalText, translatedText)
+                       && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath, originalText);
+
+            });
         return previousIdentical != null ? NavData.ListView.IndexOf(previousIdentical) : -1;
     }
 
@@ -607,10 +623,15 @@ public partial class TranslationWindowViewModel : ObservableObject
     public int GetNextIdenticalKeyIndex()
     {
         var nextIdentical = NavData.ListView.Skip(CurrentKeyIndex + 1)
-            .FirstOrDefault(x => 
-                Constants.IsLikelyUntranslatedEnglish(x.FullPath, Workspace.GetOriginalText(x.FullPath), Workspace.GetText(x.FullPath))
-                && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath)
-                );
+            .FirstOrDefault(x =>
+            {
+                var originalText = Workspace.GetOriginalText(x.FullPath);
+                var translatedText = Workspace.GetText(x.FullPath);
+
+                return Constants.IsLikelyUntranslatedEnglish(x.FullPath, originalText, translatedText)
+                       && !Constants.ShouldRemainIdenticalInTranslation(x.FullPath, originalText);
+
+            });
         return nextIdentical != null ? NavData.ListView.IndexOf(nextIdentical) : -1;
     }
 }

@@ -4,6 +4,16 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
+  <Folder Name="/Solution Files/">
+    <File Path=".gitattributes"/>
+    <File Path=".gitignore"/>
+    <File Path="CHANGELOG.md"/>
+    <File Path="global.json"/>
+    <File Path="LICENSE"/>
+    <File Path="mk-release.py"/>
+    <File Path="NOTICE.md"/>
+    <File Path="README.md"/>
+  </Folder>
   <Project Path="ScavgameTranslationUtils.UnitTests/ScavgameTranslationUtils.UnitTests.csproj" />
   <Project Path="ScavgameTranslationUtils/ScavgameTranslationUtils.csproj" />
 </Solution>

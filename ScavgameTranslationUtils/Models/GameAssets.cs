@@ -140,74 +140,18 @@ public class GameAssets : IDisposable
         if (height == -1)
             height = texFile.m_Height;
 
+        using var decodedFile = new MemoryStream();
         byte[] imageData = texFile.FillPictureData(texture.file);
-
-        var originalFormat = (TextureFormat)texFile.m_TextureFormat;
-        var texFormat = originalFormat switch
+        if (!texFile.DecodeTextureImage(imageData, decodedFile, ImageExportType.Png, 100))
         {
-            TextureFormat.BGRA32 => SKColorType.Bgra8888,
-            TextureFormat.RGBA32 => SKColorType.Rgba8888,
-            TextureFormat.RGB24 => SKColorType.Rgba8888,
-            TextureFormat.BGR24 => SKColorType.Bgra8888,
-            // TextureFormat.DXT5 => unsupported
-            _ => SKColorType.Unknown,
-        };
-
-        if (originalFormat == TextureFormat.RGB24 || originalFormat == TextureFormat.BGR24)
-        {
-            // Needs padding to 32 bytes because Skia is stupid
-            if (imageData.Length % 3 != 0)
-            {
-                // Ugh
-                texFormat = SKColorType.Unknown;
-            }
-            else
-            {
-                byte[] bgraImage = new byte[imageData.Length * 4 / 3];
-
-                int origIndex = 0;
-                int bgraIndex = 0;
-
-                while (origIndex < imageData.Length && bgraIndex < bgraImage.Length)
-                {
-                    bgraImage[bgraIndex++] = imageData[origIndex++];
-
-                    if ((origIndex + 1) % 3 == 0 && bgraIndex < bgraImage.Length)
-                    {
-                        bgraImage[bgraIndex++] = 255; // Set max alpha
-                    }
-                }
-
-                imageData = bgraImage;
-            }
-        }
-
-        if (texFormat == SKColorType.Unknown)
-        {
-            Program.LogDebug("Failed to load bitmap - couldn't determine texture format!");
+            Program.LogDebug("Failed to load bitmap - DecodeTextureImage returned null!");
             return null;
         }
-
-        GCHandle handle = GCHandle.Alloc(imageData, GCHandleType.Pinned);
-        try
-        {
-            using var original = new SKBitmap(texFile.m_Width, texFile.m_Height, texFormat, SKAlphaType.Unpremul);
-            original.SetPixels(handle.AddrOfPinnedObject());
-            using var region = new SKBitmap(width, height, texFormat, SKAlphaType.Unpremul);
-
-            // Need to flip vertically due to Avalonia
-            using (var canvas = new SKCanvas(region))
-            {
-                canvas.Scale(1, -1, width / 2f, height / 2f);
-                canvas.DrawBitmap(original, -x, -y);
-            }
-
-            return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Unpremul, region.GetPixels(), new PixelSize(width, height), new Vector(100, 100), width * 4);
-        }
-        finally
-        {
-            handle.Free();
-        }
+        
+        decodedFile.Position = 0;
+        using var image = SKImage.FromEncodedData(decodedFile);
+        using var original = SKBitmap.FromImage(image);
+        return new Bitmap(PixelFormat.Bgra8888, AlphaFormat.Unpremul, original.GetPixels(), new PixelSize(width, height), new Vector(100, 100), width * 4);
     }
 
     private void ReleaseUnmanagedResources()

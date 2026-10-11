@@ -1,25 +1,121 @@
 ﻿using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using ScavgameTranslationUtils.Models;
+using ScavgameTranslationUtils.Views;
 
 namespace ScavgameTranslationUtils.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
+    public const string LocalFile = "Local file";
+    public const int PathMaxViewableLength = 50;
+    
+    public MainWindowViewModel()
+    {
+        var baseCultures = CultureInfo.GetCultures(CultureTypes.AllCultures)
+            .ToList();
+
+        var cultureList = baseCultures
+            .Select(x => new MainWindow.SimpleCultureInfo(x.DisplayName, x.Name))
+            .ToList();
+
+        cultureList.RemoveAll(x => x.Name == ""); // Don't need the invariant culture
+
+        AliasLocale("zh-Hans-CN", "zh-CN"); // Uses simplified system in scavgame-locale
+        AliasLocale("zh-Hans-SG", "zh-SG"); // Assuming to be simplified
+        AliasLocale("zh-Hant-MO", "zh-MO"); // Assuming to be traditional
+        AliasLocale("zh-Hant-HK", "zh-HK"); // Assuming to be traditional
+        AliasLocale("zh-Hant-TW", "zh-TW"); // Uses traditional system in scavgame-locale
+
+        foreach (var culture in cultureList.OrderBy(x => x.DisplayName))
+            KnownCultures.Add(culture);
+        
+        foreach (var translationName in KnownCultures.Select(x => $"{x.DisplayName} [{x.Name}]"))
+            TranslationNames.Add(translationName);
+        
+        foreach (var translationName in KnownCultures.Select(x => x.Name))
+            TranslationCountryCodes.Add(translationName);
+
+        void AliasLocale(string original, string alias)
+        {
+            var locale = cultureList.Find(x => x.Name == original);
+        
+            if (locale != null)
+                cultureList.Add(new MainWindow.SimpleCultureInfo(locale.DisplayName, alias));
+        }
+    }
+    
+    public ObservableCollection<string> KnownEnglishVersions { get; } = [];
+
+    public ObservableCollection<MainWindow.SimpleCultureInfo> KnownCultures { get; } = [];
+
+    public ObservableCollection<string> TranslationNames { get; } = [];
+
+    public ObservableCollection<string> TranslationCountryCodes { get; } = [];
+
     public bool CanTranslate => Workspace != null;
     
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GameExecutablePathTruncated))]
     private string? _gameExecutablePath;
 
-    [ObservableProperty]
-    private string? _englishTranslationPath;
+    public string? GameExecutablePathTruncated
+    {
+        get
+        {
+            if (GameExecutablePath == null)
+                return null;
+            
+            if (GameExecutablePath.Length >= PathMaxViewableLength)
+                return "[...]" + GameExecutablePath[^PathMaxViewableLength..];
+
+            return GameExecutablePath;
+        }
+    }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EnglishTranslationPathTruncated))]
+    private string? _englishTranslationPath;
+
+    public string? EnglishTranslationPathTruncated
+    {
+        get
+        {
+            if (EnglishTranslationPath == null)
+                return null;
+            
+            if (EnglishTranslationPath.Length >= PathMaxViewableLength)
+                return "[...]" + EnglishTranslationPath[^PathMaxViewableLength..];
+
+            return EnglishTranslationPath;
+        }
+    }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TranslationPathTruncated))]
     private string? _translationPath;
+
+    public string? TranslationPathTruncated
+    {
+        get
+        {
+            if (TranslationPath == null)
+                return null;
+            
+            if (TranslationPath.Length >= PathMaxViewableLength)
+                return "[...]" + TranslationPath[^PathMaxViewableLength..];
+
+            return TranslationPath;
+        }
+    }
 
     public bool HasErrors => GameAssetsHaveErrors || WorkspaceHasErrors;
     public string ErrorMessage
@@ -54,6 +150,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     private GameAssets? _gameAssets;
+
+    [ObservableProperty]
+    public int _selectedCountryCode = -1;
+
+    [ObservableProperty]
+    public string? _selectedEnglishVersion;
+
+    partial void OnSelectedEnglishVersionChanged(string? value)
+    {
+        if (value == null || value == LocalFile)
+            return;
+
+        Dispatcher.UIThread.InvokeAsync(async () =>
+        {
+            await OpenOriginalTranslation(Constants.GetEnglishLocaleVersionPath(value));
+        });
+    }
 
     [RelayCommand]
     public async Task OpenOriginalTranslation(string translationPath)

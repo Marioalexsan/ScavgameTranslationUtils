@@ -20,8 +20,6 @@
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="40" />
-            <RowDefinition MinHeight="80" MaxHeight="150" />
-            <RowDefinition Height="40" />
             <RowDefinition Height="40" />
             <RowDefinition Height="40" />
           </Grid.RowDefinitions>
@@ -33,42 +31,24 @@
                      Text="{Binding TranslationProgress, FallbackValue=0%, TargetNullValue=0%}" 
                      ToolTip.Tip="Untranslated keys are marked with (*). Translated keys that are identical to their English counterparts are marked with (=EN); these may indicate missing translations."/>
           <TextBlock Grid.Row="1" Grid.Column="0"
-                     TextWrapping="Wrap"
-                     Text="Translation name" />
-          <TextBox Grid.Row="1" Grid.Column="1"
-                   TextWrapping="Wrap"
-                   Text="{Binding CurrentName}"
-                   LostFocus="AutosaveChanges" />
-          <TextBlock Grid.Row="2" Grid.Column="0"
-                     TextWrapping="Wrap"
-                     Text="Translation description" />
-          <ScrollViewer Grid.Row="2" Grid.Column="1"
-                        MaxHeight="150"
-                        VerticalScrollBarVisibility="Visible">
-            <TextBox TextWrapping="Wrap"
-                     AcceptsReturn="True"
-                     Text="{Binding CurrentDescription}"
-                     LostFocus="AutosaveChanges" />
-          </ScrollViewer>
-          <TextBlock Grid.Row="3" Grid.Column="0"
                      Text="Indent size" />
-          <ComboBox Grid.Row="3" Grid.Column="1"
+          <ComboBox Grid.Row="1" Grid.Column="1"
                     ItemsSource="{Binding AllowedIndents}"
                     SelectedItem="{Binding IndentSize}"
                     SelectionChanged="AutosaveChanges" />
-          <TextBlock Grid.Row="4" Grid.Column="0"
+          <TextBlock Grid.Row="2" Grid.Column="0"
                      TextWrapping="Wrap"
                      Text="Save changes automatically" />
-          <CheckBox Grid.Row="4" Grid.Column="1"
+          <CheckBox Grid.Row="2" Grid.Column="1"
                     IsChecked="{Binding AutosaveEnabled}" />
-          <TextBlock Grid.Row="5" Grid.Column="0"
+          <TextBlock Grid.Row="3" Grid.Column="0"
                      TextWrapping="Wrap"
                      Text="Sort keys in EN.json order" />
-          <CheckBox Grid.Row="5" Grid.Column="1"
+          <CheckBox Grid.Row="3" Grid.Column="1"
                     IsChecked="{Binding SortKeys}" />
         </Grid>
         <StackPanel Orientation="Horizontal" Margin="20" Spacing="10">
-          <Button Click="BackfllWithEnglishText"
+          <Button Click="BackfillWithEnglishText"
                   Content="Backfill with English Text and Save" />
         </StackPanel>
         <StackPanel Orientation="Horizontal" Margin="20" Spacing="10">
