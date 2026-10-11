@@ -5,8 +5,8 @@ import os
 rids = ["win-x64", "linux-x64"]
 
 for rid in rids:
-  subprocess.call(' '.join(
-    [
+  subprocess.run(
+    ' '.join([
       "dotnet publish ./ScavgameTranslationUtils/ScavgameTranslationUtils.csproj",
       f"--runtime {rid}",
       "--configuration Release",
@@ -14,8 +14,7 @@ for rid in rids:
       "--self-contained",
       "--p:PublishTrimmed=true",
       "--p:PublishSingleFile=true"
-    ]
-  ), text=True)
+    ]), text=True, check=True, shell=True)
 
   with zipfile.ZipFile(f"./bin/publish/ScavgameTranslationUtils-{rid}.zip", "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as f:
     for file in os.listdir(f"bin/publish/ScavgameTranslationUtils-{rid}/"):
